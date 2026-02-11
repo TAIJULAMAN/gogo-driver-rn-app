@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "GOGO Driver",
-    "slug": "gogo-driver",
+    "name": "GOGO",
+    "slug": "gogo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "scheme": "gogo-driver",
+    "icon": "./assets/logo/logo.png",
+    "scheme": "gogo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#2D3748"
     },
@@ -19,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logo/logo.png",
         "backgroundColor": "#2D3748"
       },
       "package": "com.gogo.driver"
@@ -27,7 +27,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/logo/logo.png"
     },
     "plugins": [
       "expo-router",

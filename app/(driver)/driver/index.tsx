@@ -7,7 +7,6 @@ import * as Haptics from 'expo-haptics';
 import { Colors } from '../../../constants/Colors';
 import { StatCard } from '../../../components/StatCard';
 import { RideCard } from '../../../components/RideCard';
-import { DriverMapView } from '../../../components/DriverMapView';
 import { RideCompletionModal } from '../../../components/RideCompletionModal';
 import { mockActiveRide, mockDriverStats, formatCurrency } from '../../../utils/mockData';
 
@@ -16,22 +15,6 @@ export default function DriverHomeScreen() {
     const [hasActiveRide, setHasActiveRide] = useState(true);
     const [showCompletionModal, setShowCompletionModal] = useState(false);
     const stats = mockDriverStats;
-
-    // Mock driver location (in real app, use GPS)
-    const driverLocation = {
-        address: 'Current Location',
-        latitude: 40.7580,
-        longitude: -73.9855,
-    };
-
-    const handleToggleOnline = (value: boolean) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setIsOnline(value);
-        Alert.alert(
-            value ? 'You are now Online' : 'You are now Offline',
-            value ? 'You can now receive ride requests' : 'You will not receive ride requests'
-        );
-    };
 
     const handleCompleteRide = () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -87,38 +70,15 @@ export default function DriverHomeScreen() {
                 </View>
             </Animated.View>
 
-            {/* Online/Offline Toggle */}
-            <Animated.View
-                entering={FadeInDown.delay(200).duration(600)}
-                style={styles.statusCard}
-            >
-                <View style={styles.statusContainer}>
-                    <View>
-                        <Text style={styles.statusLabel}>Status</Text>
-                        <Text style={[styles.statusValue, { color: isOnline ? Colors.success : Colors.textLight }]}>
-                            {isOnline ? 'Online' : 'Offline'}
-                        </Text>
-                    </View>
-                    <Switch
-                        value={isOnline}
-                        onValueChange={handleToggleOnline}
-                        trackColor={{ false: Colors.gray[300], true: Colors.primary }}
-                        thumbColor={Colors.white}
-                    />
-                </View>
-            </Animated.View>
-
             {/* Map View */}
             <Animated.View
                 entering={FadeInDown.delay(300).duration(600)}
                 style={styles.mapContainer}
             >
-                <DriverMapView
-                    driverLocation={driverLocation}
-                    pickup={hasActiveRide && isOnline ? mockActiveRide.pickup : undefined}
-                    dropoff={hasActiveRide && isOnline ? mockActiveRide.dropoff : undefined}
-                    showRoute={hasActiveRide && isOnline}
-                />
+                <View style={styles.mapPlaceholder}>
+                    <Ionicons name="map" size={64} color={Colors.gray[300]} />
+                    <Text style={styles.mapPlaceholderText}>Map View</Text>
+                </View>
             </Animated.View>
 
             {/* Active Ride Card */}
@@ -395,6 +355,18 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 3,
+    },
+    mapPlaceholder: {
+        flex: 1,
+        backgroundColor: Colors.gray[100],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    mapPlaceholderText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: Colors.textLight,
+        marginTop: 12,
     },
     section: {
         padding: 20,
