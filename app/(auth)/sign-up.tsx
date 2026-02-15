@@ -5,12 +5,15 @@ import { Colors } from '../../constants/Colors';
 import { CustomInput } from '../../components/CustomInput';
 import { Button } from '../../components/Button';
 
+import { FileUpload } from '../../components/FileUpload';
+
 export default function SignUpScreen() {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [address, setAddress] = useState('');
+    const [emiratesId, setEmiratesId] = useState('');
+    const [drivingLicense, setDrivingLicense] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSignUp = async () => {
@@ -29,8 +32,8 @@ export default function SignUpScreen() {
         >
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Text style={styles.logo}>GOGO</Text>
-                    <Text style={styles.subtitle}>Driver Sign Up</Text>
+                    <Text style={styles.logo}>Create Account</Text>
+                    <Text style={styles.subtitle}>Sign up to get started!</Text>
                 </View>
 
                 <View style={styles.form}>
@@ -58,19 +61,22 @@ export default function SignUpScreen() {
                     />
 
                     <CustomInput
-                        label="Password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
+                        label="Address"
+                        placeholder="Your residential address"
+                        value={address}
+                        onChangeText={setAddress}
                     />
 
-                    <CustomInput
-                        label="Confirm Password"
-                        placeholder="Confirm your password"
-                        value={confirmPassword}
-                        onChangeText={setConfirmPassword}
-                        secureTextEntry
+                    <FileUpload
+                        label="Upload Emirates ID"
+                        imageUri={emiratesId}
+                        onImageSelected={setEmiratesId}
+                    />
+
+                    <FileUpload
+                        label="Upload Driving License"
+                        imageUri={drivingLicense}
+                        onImageSelected={setDrivingLicense}
                     />
 
                     <Button
@@ -104,19 +110,17 @@ const styles = StyleSheet.create({
         paddingVertical: 40,
     },
     header: {
-        alignItems: 'center',
         marginBottom: 32,
     },
     logo: {
-        fontSize: 48,
+        fontSize: 32,
         fontWeight: 'bold',
-        color: Colors.primary,
-        letterSpacing: 2,
+        color: '#1a1a1a',
+        marginBottom: 8,
     },
     subtitle: {
-        fontSize: 18,
-        color: Colors.textLight,
-        marginTop: 8,
+        fontSize: 16,
+        color: '#666',
     },
     form: {
         width: '100%',

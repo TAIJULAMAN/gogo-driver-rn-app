@@ -8,20 +8,19 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function SignInScreen() {
     const [phone, setPhone] = useState('');
-    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const { signIn } = useAuth();
+    const { signIn } = useAuth(); // Potentially update auth context logic
 
     const handleSignIn = async () => {
         setLoading(true);
-        try {
-            await signIn(phone, password);
-            router.replace('/(driver)/driver');
-        } catch (error) {
-            console.error(error);
-        } finally {
+        // Simulate OTP send
+        setTimeout(() => {
             setLoading(false);
-        }
+            router.push({
+                pathname: '/(auth)/verify-otp',
+                params: { phone }
+            });
+        }, 1500);
     };
 
     return (
@@ -44,20 +43,8 @@ export default function SignInScreen() {
                         keyboardType="phone-pad"
                     />
 
-                    <CustomInput
-                        label="Password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                    />
-
-                    <TouchableOpacity style={styles.forgotPassword}>
-                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                    </TouchableOpacity>
-
                     <Button
-                        title="Sign In"
+                        title="Get OTP"
                         onPress={handleSignIn}
                         loading={loading}
                         style={styles.signInButton}
@@ -103,17 +90,9 @@ const styles = StyleSheet.create({
     form: {
         width: '100%',
     },
-    forgotPassword: {
-        alignSelf: 'flex-end',
-        marginBottom: 24,
-    },
-    forgotPasswordText: {
-        color: Colors.primary,
-        fontSize: 14,
-        fontWeight: '600',
-    },
     signInButton: {
         marginBottom: 24,
+        marginTop: 24,
     },
     signUpContainer: {
         flexDirection: 'row',
