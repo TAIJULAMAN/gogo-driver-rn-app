@@ -71,6 +71,18 @@ export default function AccountScreen() {
             </Animated.View>
 
             <View style={styles.section}>
+                <Text style={styles.sectionHeader}>Share & Earn</Text>
+                <View style={styles.card}>
+                    <MenuItem
+                        icon="gift-outline"
+                        title="Referral"
+                        onPress={() => router.push('/(driver)/driver/referral')}
+                        color={Colors.primary}
+                    />
+                </View>
+            </View>
+
+            <View style={styles.section}>
                 <Text style={styles.sectionHeader}>Vehicle & Documents</Text>
                 <View style={styles.card}>
                     <MenuItem
