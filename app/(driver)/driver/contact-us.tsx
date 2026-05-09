@@ -1,24 +1,45 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
+import { useGetCommonContentQuery, useCreateReportMutation } from '../../../Redux/api/commonApi';
+import { useGetDriverProfileQuery } from '../../../Redux/api/driverApi';
 
 export default function ContactUsScreen() {
     const router = useRouter();
+    const { data: contentData } = useGetCommonContentQuery({});
+    const { data: profileData } = useGetDriverProfileQuery({});
+    const [createReport, { isLoading: isSubmitting }] = useCreateReportMutation();
+    
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
 
-    const handleSubmit = () => {
+    const contactEmail = contentData?.data?.contactEmail || 'support@gogo.com';
+    const contactPhone = contentData?.data?.contactPhone || '+971 50 123 4567';
+
+    const handleSubmit = async () => {
         if (!subject || !message) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
         }
 
-        Alert.alert('Success', 'Your message has been sent. We will get back to you shortly.', [
-            { text: 'OK', onPress: () => router.back() }
-        ]);
+        try {
+            await createReport({
+                title: subject,
+                description: message,
+                reporter: profileData?.data?._id,
+                reporterRole: 'Rider' // Driver is Rider in backend
+            }).unwrap();
+
+            Alert.alert('Success', 'Your message has been sent. We will get back to you shortly.', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
+        } catch (error: any) {
+            console.error("Submit report error:", error);
+            Alert.alert("Error", error?.data?.message || "Failed to send message. Please try again.");
+        }
     };
 
     return (
@@ -46,11 +67,11 @@ export default function ContactUsScreen() {
 
                     <View style={styles.contactRow}>
                         <Ionicons name="call" size={20} color={Colors.primary} />
-                        <Text style={styles.contactDetail}>+971 50 123 4567</Text>
+                        <Text style={styles.contactDetail}>{contactPhone}</Text>
                     </View>
                     <View style={styles.contactRow}>
                         <Ionicons name="mail" size={20} color={Colors.primary} />
-                        <Text style={styles.contactDetail}>support@gogo.com</Text>
+                        <Text style={styles.contactDetail}>{contactEmail}</Text>
                     </View>
                 </View>
 
@@ -61,6 +82,7 @@ export default function ContactUsScreen() {
                         placeholder="What is this about?"
                         value={subject}
                         onChangeText={setSubject}
+                        editable={!isSubmitting}
                     />
 
                     <Text style={styles.label}>Message</Text>
@@ -72,10 +94,19 @@ export default function ContactUsScreen() {
                         textAlignVertical="top"
                         value={message}
                         onChangeText={setMessage}
+                        editable={!isSubmitting}
                     />
 
-                    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                        <Text style={styles.submitButtonText}>Send Message</Text>
+                    <TouchableOpacity 
+                        style={[styles.submitButton, isSubmitting && { opacity: 0.7 }]} 
+                        onPress={handleSubmit}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>Send Message</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
             </ScrollView>

@@ -1,14 +1,54 @@
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import React from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../context/AuthContext';
+import { useGetDriverProfileQuery, useUpdateDriverProfileMutation } from '../../Redux/api/driverApi';
 
 export default function AccountScreen() {
-    const { user, signOut } = useAuth();
+    const { signOut } = useAuth();
     const router = useRouter();
+    const { data: profileData, isLoading } = useGetDriverProfileQuery({});
+    const [updateProfile, { isLoading: isUpdating }] = useUpdateDriverProfileMutation();
+    
+    const user = profileData?.data;
+    const userName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.name || user?.email?.split('@')[0] || 'Driver';
+    const userEmail = user?.email || '';
+    const avatarInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+    const handlePickImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.5,
+        });
+
+        if (!result.canceled) {
+            const formData = new FormData();
+            const uri = result.assets[0].uri;
+            const filename = uri.split('/').pop();
+            const match = /\.(\w+)$/.exec(filename || '');
+            const type = match ? `image/${match[1]}` : `image`;
+
+            formData.append('profileImage', {
+                uri,
+                name: filename,
+                type,
+            } as any);
+
+            try {
+                await updateProfile(formData).unwrap();
+                Alert.alert("Success", "Profile image updated successfully!");
+            } catch (error) {
+                console.error("Image upload error:", error);
+                Alert.alert("Error", "Failed to upload image. Please try again.");
+            }
+        }
+    };
 
     const handleSignOut = async () => {
         Alert.alert(
@@ -38,36 +78,65 @@ export default function AccountScreen() {
         </TouchableOpacity>
     );
 
+    if (isLoading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+            </View>
+        );
+    }
+
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
             <Stack.Screen options={{ headerShown: false }} />
 
+            {/* Background watermark icon */}
+            <View style={styles.watermarkContainer}>
+                <Ionicons
+                    name="person-circle-outline"
+                    size={240}
+                    color={Colors.primary}
+                    style={{ opacity: 0.15, transform: [{ rotate: "-15deg" }] }}
+                />
+            </View>
+
+            {/* Top Header Section */}
             <View style={styles.header}>
                 <Text style={styles.title}>Account</Text>
             </View>
 
             <Animated.View
                 entering={FadeInUp.delay(200).duration(800)}
-                style={styles.profileSection}
+                style={styles.profileHeaderSection}
             >
-                <View style={styles.userInfo}>
-                    <View style={styles.avatarContainer}>
-                        <View style={styles.avatarPlaceholder}>
-                            <Ionicons name="person" size={40} color="#fff" />
-                        </View>
-                        <View style={styles.onlineIndicator} />
-                    </View>
-                    <View style={styles.profileInfo}>
-                        <Text style={styles.profileName}>{user?.name || 'Driver Name'}</Text>
-                        <Text style={styles.profileEmail}>{user?.email || 'driver@example.com'}</Text>
-                    </View>
+                {/* Avatar Section */}
+                <View style={styles.avatarContainer}>
+                    <TouchableOpacity
+                        style={styles.avatarCircle}
+                        onPress={handlePickImage}
+                        disabled={isUpdating}
+                    >
+                        {isUpdating ? (
+                            <ActivityIndicator size="small" color="#000" />
+                        ) : user?.profileImage ? (
+                            <Image source={{ uri: user.profileImage }} style={styles.avatarImage} />
+                        ) : (
+                            <Text style={styles.avatarInitials}>{avatarInitials}</Text>
+                        )}
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.editIconOverlay} onPress={handlePickImage}>
+                        <Ionicons name="camera" size={14} color="#000" />
+                    </TouchableOpacity>
+                    <View style={[
+                        styles.onlineIndicator, 
+                        { backgroundColor: user?.isOnline ? '#4CAF50' : '#767577' }
+                    ]} />
                 </View>
-                <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => router.push('/(driver)/driver/edit-profile')}
-                >
-                    <Ionicons name="pencil" size={20} color={Colors.text} />
-                </TouchableOpacity>
+
+                <Text style={styles.profileNameCentered}>{userName}</Text>
+                <View style={styles.emailRow}>
+                    <Text style={styles.profileEmailCentered}>{userEmail}</Text>
+                </View>
             </Animated.View>
 
             <View style={styles.section}>
@@ -90,12 +159,12 @@ export default function AccountScreen() {
                         title="Vehicle Information"
                         onPress={() => router.push('/(driver)/driver/vehicle-info')}
                     />
-                    <View style={styles.divider} />
+                    {/* <View style={styles.divider} />
                     <MenuItem
                         icon="document-text-outline"
                         title="Documents"
                         onPress={() => router.push('/(driver)/driver/documents')}
-                    />
+                    /> */}
                 </View>
             </View>
 
@@ -172,77 +241,100 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8f9fa',
         paddingTop: 60,
     },
+    watermarkContainer: {
+        position: 'absolute',
+        top: -40,
+        right: -40,
+        zIndex: -1,
+    },
     header: {
         paddingHorizontal: 24,
-        marginBottom: 24,
+        paddingTop: 20,
+        marginBottom: 10,
     },
     title: {
         fontSize: 32,
         fontWeight: 'bold',
         color: Colors.text,
     },
-    profileSection: {
-        flexDirection: 'row',
+    profileHeaderSection: {
         alignItems: 'center',
-        justifyContent: 'space-between',
         paddingHorizontal: 24,
         marginBottom: 32,
     },
-    userInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
     avatarContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        marginRight: 16,
+        width: 100,
+        height: 100,
+        marginBottom: 16,
         position: 'relative',
     },
-    avatarPlaceholder: {
+    avatarCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: Colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 4,
+        borderColor: '#fff',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 5,
+        overflow: 'hidden',
+    },
+    avatarImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 40,
-        backgroundColor: Colors.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
-    onlineIndicator: {
-        position: 'absolute',
-        bottom: 2,
-        right: 2,
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        backgroundColor: '#4CAF50',
-        borderWidth: 3,
-        borderColor: '#f8f9fa',
-    },
-    profileInfo: {
-        flex: 1,
-    },
-    profileName: {
-        fontSize: 20,
+    avatarInitials: {
+        fontSize: 36,
         fontWeight: 'bold',
-        color: Colors.text,
-        marginBottom: 4,
+        color: '#000',
     },
-    profileEmail: {
-        fontSize: 14,
-        color: '#666',
-    },
-    editButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+    editIconOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         backgroundColor: '#fff',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.2,
         shadowRadius: 4,
-        elevation: 2,
+        elevation: 3,
+    },
+    onlineIndicator: {
+        position: 'absolute',
+        bottom: 5,
+        left: 5,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        borderWidth: 3,
+        borderColor: '#fff',
+    },
+    profileNameCentered: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: Colors.text,
+        marginBottom: 4,
+        textAlign: 'center',
+    },
+    emailRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    profileEmailCentered: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
     },
     section: {
         paddingHorizontal: 24,

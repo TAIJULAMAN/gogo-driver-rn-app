@@ -1,25 +1,57 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
+import { useGetDriverProfileQuery, useUpdateDriverProfileMutation } from '../../../Redux/api/driverApi';
 
 export default function VehicleInfoScreen() {
     const router = useRouter();
-    const [vehicleType, setVehicleType] = useState('Car');
-    const [make, setMake] = useState('Toyota');
-    const [model, setModel] = useState('Camry');
-    const [year, setYear] = useState('2022');
-    const [plateNumber, setPlateNumber] = useState('DXB A 12345');
-    const [color, setColor] = useState('White');
+    const { data: profileData } = useGetDriverProfileQuery({});
+    const [updateProfile, { isLoading: isUpdating }] = useUpdateDriverProfileMutation();
+    
+    const user = profileData?.data;
+    const [vehicleType, setVehicleType] = useState(user?.vehicle?.type || 'Car');
+    const [make, setMake] = useState(user?.vehicle?.make || '');
+    const [model, setModel] = useState(user?.vehicle?.model || '');
+    const [year, setYear] = useState(user?.vehicle?.year || '');
+    const [plateNumber, setPlateNumber] = useState(user?.vehicle?.plateNumber || '');
+    const [color, setColor] = useState(user?.vehicle?.color || '');
 
-    const handleSave = () => {
-        Alert.alert(
-            'Success',
-            'Vehicle information updated successfully',
-            [{ text: 'OK', onPress: () => router.back() }]
-        );
+    useEffect(() => {
+        if (user?.vehicle) {
+            setVehicleType(user.vehicle.type || 'Car');
+            setMake(user.vehicle.make || '');
+            setModel(user.vehicle.model || '');
+            setYear(user.vehicle.year || '');
+            setPlateNumber(user.vehicle.plateNumber || '');
+            setColor(user.vehicle.color || '');
+        }
+    }, [user]);
+
+    const handleSave = async () => {
+        try {
+            await updateProfile({
+                vehicle: {
+                    type: vehicleType,
+                    make,
+                    model,
+                    year,
+                    plateNumber,
+                    color
+                }
+            }).unwrap();
+
+            Alert.alert(
+                'Success',
+                'Vehicle information updated successfully',
+                [{ text: 'OK', onPress: () => router.back() }]
+            );
+        } catch (error: any) {
+            console.error("Update vehicle error:", error);
+            Alert.alert("Error", error?.data?.message || "Failed to update vehicle information");
+        }
     };
 
     return (
@@ -119,8 +151,16 @@ export default function VehicleInfoScreen() {
             </ScrollView>
 
             <View style={styles.footer}>
-                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                <TouchableOpacity 
+                    style={[styles.saveButton, isUpdating && { opacity: 0.7 }]} 
+                    onPress={handleSave}
+                    disabled={isUpdating}
+                >
+                    {isUpdating ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.saveButtonText}>Save Changes</Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>

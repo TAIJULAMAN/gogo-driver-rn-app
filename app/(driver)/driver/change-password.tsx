@@ -1,17 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ActivityIndicator } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
+import { useChangePasswordMutation } from '../../../Redux/api/authApi';
 
 export default function ChangePasswordScreen() {
     const router = useRouter();
+    const [changePassword, { isLoading }] = useChangePasswordMutation();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    const handleChangePassword = () => {
+    const handleChangePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
@@ -22,9 +24,20 @@ export default function ChangePasswordScreen() {
             return;
         }
 
-        Alert.alert('Success', 'Password changed successfully', [
-            { text: 'OK', onPress: () => router.back() }
-        ]);
+        try {
+            await changePassword({
+                currentPassword,
+                newPassword,
+                confirmPassword,
+            }).unwrap();
+
+            Alert.alert('Success', 'Password changed successfully', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
+        } catch (error: any) {
+            console.error("Change password error:", error);
+            Alert.alert("Error", error?.data?.message || "Failed to change password");
+        }
     };
 
     return (
@@ -86,8 +99,16 @@ export default function ChangePasswordScreen() {
                     </View>
                 </View>
 
-                <TouchableOpacity style={styles.button} onPress={handleChangePassword}>
-                    <Text style={styles.buttonText}>Update Password</Text>
+                <TouchableOpacity 
+                    style={[styles.button, isLoading && { opacity: 0.7 }]} 
+                    onPress={handleChangePassword}
+                    disabled={isLoading}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.buttonText}>Update Password</Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>

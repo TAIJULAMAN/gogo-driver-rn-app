@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
+import { useGetCommonContentQuery } from '@/Redux/api/commonApi';
 
 const FAQItem = ({ question, answer }: { question: string, answer: string }) => {
     const [expanded, setExpanded] = useState(false);
@@ -33,6 +34,8 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
 
 export default function HelpCenterScreen() {
     const router = useRouter();
+    const { data: contentData, isLoading } = useGetCommonContentQuery({});
+    const faqs = contentData?.data?.faqs || [];
 
     return (
         <View style={styles.container}>
@@ -50,26 +53,40 @@ export default function HelpCenterScreen() {
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
 
-                <FAQItem
-                    question="How do I view my earnings?"
-                    answer="You can view your daily, weekly, and monthly earnings in the Earnings tab. Tap on any entry to see detailed breakdowns."
-                />
-                <FAQItem
-                    question="How do I change my vehicle details?"
-                    answer="Go to Account > Vehicle Information to update your vehicle make, model, year, or plate number."
-                />
-                <FAQItem
-                    question="What if a passenger leaves an item behind?"
-                    answer="Please report lost items immediately through the 'Contact Us' page or call support directly."
-                />
-                <FAQItem
-                    question="How are fares calculated?"
-                    answer="Fares are calculated based on time and distance, plus a base fare. Surge pricing may apply during high demand."
-                />
-                <FAQItem
-                    question="How do I update my documents?"
-                    answer="Go to Account > Documents to upload new photos of your license, ID, or vehicle registration."
-                />
+                {isLoading ? (
+                    <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 20 }} />
+                ) : faqs.length > 0 ? (
+                    faqs.map((faq: any, index: number) => (
+                        <FAQItem
+                            key={index}
+                            question={faq.question}
+                            answer={faq.answer}
+                        />
+                    ))
+                ) : (
+                    <>
+                        <FAQItem
+                            question="How do I view my earnings?"
+                            answer="You can view your daily, weekly, and monthly earnings in the Earnings tab. Tap on any entry to see detailed breakdowns."
+                        />
+                        <FAQItem
+                            question="How do I change my vehicle details?"
+                            answer="Go to Account > Vehicle Information to update your vehicle make, model, year, or plate number."
+                        />
+                        <FAQItem
+                            question="What if a passenger leaves an item behind?"
+                            answer="Please report lost items immediately through the 'Contact Us' page or call support directly."
+                        />
+                        <FAQItem
+                            question="How are fares calculated?"
+                            answer="Fares are calculated based on time and distance, plus a base fare. Surge pricing may apply during high demand."
+                        />
+                        <FAQItem
+                            question="How do I update my documents?"
+                            answer="Go to Account > Documents to upload new photos of your license, ID, or vehicle registration."
+                        />
+                    </>
+                )}
 
                 <View style={styles.contactSupport}>
                     <Text style={styles.contactTitle}>Still need help?</Text>

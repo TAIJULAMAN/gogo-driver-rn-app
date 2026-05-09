@@ -1,28 +1,67 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { FileUpload } from '../../../components/FileUpload';
 import { Colors } from '../../../constants/Colors';
+import { useGetDriverProfileQuery, useUpdateDriverProfileMutation } from '../../../Redux/api/driverApi';
 
 export default function DocumentsScreen() {
     const router = useRouter();
+    const { data: profileData } = useGetDriverProfileQuery({});
+    const [updateProfile, { isLoading: isUpdating }] = useUpdateDriverProfileMutation();
+    
+    const user = profileData?.data;
     const [emiratesId, setEmiratesId] = useState<string | undefined>(undefined);
     const [drivingLicense, setDrivingLicense] = useState<string | undefined>(undefined);
     const [vehicleRegistration, setVehicleRegistration] = useState<string | undefined>(undefined);
 
-    const handleSave = () => {
-        Alert.alert(
-            'Success',
-            'Documents uploaded successfully',
-            [{ text: 'OK', onPress: () => router.back() }]
-        );
-    };
+    useEffect(() => {
+        if (user) {
+            setEmiratesId(user.emaratesId);
+            setDrivingLicense(user.drivingLicense);
+            setVehicleRegistration(user.vehicleRegistration);
+        }
+    }, [user]);
 
-    const handleImageSelected = (setter: (uri: string) => void) => (uri: string) => {
-        console.log('Image selected:', uri);
-        setter(uri); // TypeScript should be happy now as setter expects string and uri is string
+    const handleSave = async () => {
+        const formData = new FormData();
+        
+        const addFile = (uri: string, field: string) => {
+            if (uri && uri.startsWith('file://')) {
+                const filename = uri.split('/').pop();
+                const match = /\.(\w+)$/.exec(filename || '');
+                const type = match ? `image/${match[1]}` : `image`;
+                formData.append(field, {
+                    uri,
+                    name: filename,
+                    type,
+                } as any);
+            }
+        };
+
+        if (emiratesId) addFile(emiratesId, 'emaratesId');
+        if (drivingLicense) addFile(drivingLicense, 'drivingLicense');
+        if (vehicleRegistration) addFile(vehicleRegistration, 'vehicleRegistration');
+
+        // If no new files were selected, just go back
+        if (Array.from((formData as any).entries()).length === 0) {
+            router.back();
+            return;
+        }
+
+        try {
+            await updateProfile(formData).unwrap();
+            Alert.alert(
+                'Success',
+                'Documents uploaded successfully',
+                [{ text: 'OK', onPress: () => router.back() }]
+            );
+        } catch (error: any) {
+            console.error("Document upload error:", error);
+            Alert.alert("Error", error?.data?.message || "Failed to upload documents");
+        }
     };
 
 
@@ -67,8 +106,16 @@ export default function DocumentsScreen() {
             </ScrollView>
 
             <View style={styles.footer}>
-                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                    <Text style={styles.saveButtonText}>Save Documents</Text>
+                <TouchableOpacity 
+                    style={[styles.saveButton, isUpdating && { opacity: 0.7 }]} 
+                    onPress={handleSave}
+                    disabled={isUpdating}
+                >
+                    {isUpdating ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.saveButtonText}>Save Documents</Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>

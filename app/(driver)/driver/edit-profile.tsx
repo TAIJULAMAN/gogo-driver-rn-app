@@ -1,35 +1,54 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
-import { useAuth } from '../../../context/AuthContext';
+import { useGetDriverProfileQuery, useUpdateDriverProfileMutation } from '../../../Redux/api/driverApi';
 
 export default function EditProfileScreen() {
     const router = useRouter();
-    const { user } = useAuth();
-    const [name, setName] = useState(user?.name || 'Driver Name');
-    const [email, setEmail] = useState(user?.email || 'driver@example.com');
-    const [phone, setPhone] = useState(user?.phone || '+1 (555) 000-0000');
-    const [address, setAddress] = useState('123 Main St, City, Country');
+    const { data: profileData } = useGetDriverProfileQuery({});
+    const [updateProfile, { isLoading: isUpdating }] = useUpdateDriverProfileMutation();
+    
+    const user = profileData?.data;
+    const [firstName, setFirstName] = useState(user?.firstName || '');
+    const [lastName, setLastName] = useState(user?.lastName || '');
+    const [email, setEmail] = useState(user?.email || '');
+    const [phone, setPhone] = useState(user?.phoneNumber || '');
 
-    const handleSave = () => {
-        if (!name || !email || !phone) {
+    useEffect(() => {
+        if (user) {
+            setFirstName(user.firstName || '');
+            setLastName(user.lastName || '');
+            setEmail(user.email || '');
+            setPhone(user.phoneNumber || '');
+        }
+    }, [user]);
+
+    const handleSave = async () => {
+        if (!firstName || !lastName || !email || !phone) {
             Alert.alert('Error', 'Please fill in all required fields');
             return;
         }
 
-        Alert.alert(
-            'Success',
-            'Your profile has been updated successfully',
-            [
-                {
-                    text: 'OK',
-                    onPress: () => router.back()
-                }
-            ]
-        );
+        try {
+            await updateProfile({
+                firstName,
+                lastName,
+                email,
+                phoneNumber: phone
+            }).unwrap();
+
+            Alert.alert(
+                'Success',
+                'Your profile has been updated successfully',
+                [{ text: 'OK', onPress: () => router.back() }]
+            );
+        } catch (error: any) {
+            console.error("Update profile error:", error);
+            Alert.alert("Error", error?.data?.message || "Failed to update profile");
+        }
     };
 
     return (
@@ -54,26 +73,43 @@ export default function EditProfileScreen() {
                     {/* Avatar Section */}
                     <View style={styles.avatarSection}>
                         <View style={styles.avatarContainer}>
-                            <Ionicons name="person" size={50} color="#fff" />
+                            {user?.profileImage ? (
+                                <Image source={{ uri: user.profileImage }} style={styles.avatarImage} />
+                            ) : (
+                                <Text style={styles.avatarInitials}>
+                                    {[firstName, lastName].filter(Boolean).map(n => n[0]).join('').toUpperCase().substring(0, 2) || '?'}
+                                </Text>
+                            )}
                         </View>
-                        <TouchableOpacity style={styles.changePhotoButton}>
-                            <Ionicons name="camera" size={16} color={Colors.primary} />
-                            <Text style={styles.changePhotoText}>Change Photo</Text>
-                        </TouchableOpacity>
                     </View>
 
                     {/* Form Fields */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Full Name *</Text>
-                        <View style={styles.inputContainer}>
-                            <Ionicons name="person-outline" size={20} color="#999" />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Enter your name"
-                                placeholderTextColor="#999"
-                                value={name}
-                                onChangeText={setName}
-                            />
+                    <View style={styles.row}>
+                        <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
+                            <Text style={styles.label}>First Name *</Text>
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="person-outline" size={20} color="#999" />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="First Name"
+                                    placeholderTextColor="#999"
+                                    value={firstName}
+                                    onChangeText={setFirstName}
+                                />
+                            </View>
+                        </View>
+                        <View style={[styles.inputGroup, { flex: 1 }]}>
+                            <Text style={styles.label}>Last Name *</Text>
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="person-outline" size={20} color="#999" />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Last Name"
+                                    placeholderTextColor="#999"
+                                    value={lastName}
+                                    onChangeText={setLastName}
+                                />
+                            </View>
                         </View>
                     </View>
 
@@ -107,20 +143,6 @@ export default function EditProfileScreen() {
                             />
                         </View>
                     </View>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Address</Text>
-                        <View style={styles.inputContainer}>
-                            <Ionicons name="location-outline" size={20} color="#999" />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Enter your address"
-                                placeholderTextColor="#999"
-                                value={address}
-                                onChangeText={setAddress}
-                            />
-                        </View>
-                    </View>
                     <View style={{ height: 100 }} />
                 </Animated.View>
             </ScrollView>
@@ -131,11 +153,16 @@ export default function EditProfileScreen() {
                 style={styles.buttonContainer}
             >
                 <TouchableOpacity
-                    style={styles.saveButton}
+                    style={[styles.saveButton, isUpdating && { opacity: 0.7 }]}
                     onPress={handleSave}
+                    disabled={isUpdating}
                     activeOpacity={0.8}
                 >
-                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                    {isUpdating ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.saveButtonText}>Save Changes</Text>
+                    )}
                 </TouchableOpacity>
             </Animated.View>
         </View>
@@ -183,15 +210,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 16,
     },
-    changePhotoButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
+    avatarImage: {
+        width: '100%',
+        height: '100%',
     },
-    changePhotoText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: Colors.primary,
+    avatarInitials: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: '#000',
+    },
+    row: {
+        flexDirection: 'row',
+        width: '100%',
     },
     inputGroup: {
         marginBottom: 20,

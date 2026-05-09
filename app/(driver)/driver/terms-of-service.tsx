@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
+import { useGetCommonContentQuery } from '../../../Redux/api/commonApi';
 
 export default function TermsServiceScreen() {
     const router = useRouter();
+    const { data: contentData, isLoading } = useGetCommonContentQuery({});
+    const terms = contentData?.data?.termsAndConditions;
 
     return (
         <View style={styles.container}>
@@ -22,37 +25,19 @@ export default function TermsServiceScreen() {
             </Animated.View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                <Text style={styles.lastUpdated}>Last Updated: October 2023</Text>
+                {isLoading ? (
+                    <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+                ) : (
+                    <>
+                        <Text style={styles.lastUpdated}>
+                            Last Updated: {contentData?.data?.updatedAt ? new Date(contentData.data.updatedAt).toLocaleDateString() : 'October 2023'}
+                        </Text>
 
-                <Text style={styles.paragraph}>
-                    Welcome to GOGO Driver. By using our app, you agree to these Terms of Service. Please read them carefully.
-                </Text>
-
-                <Text style={styles.heading}>1. Acceptance of Terms</Text>
-                <Text style={styles.paragraph}>
-                    By accessing or using the GOGO Driver platform, you agree to be bound by these Terms. If you disagree with any part of the terms, you may not use our services.
-                </Text>
-
-                <Text style={styles.heading}>2. Driver Eligibility</Text>
-                <Text style={styles.paragraph}>
-                    To become a driver on the GOGO platform, you must meet certain eligibility criteria, including holding a valid driving license, passing background checks, and maintaining vehicle standards.
-                </Text>
-
-                <Text style={styles.heading}>3. Service Modifications</Text>
-                <Text style={styles.paragraph}>
-                    GOGO reserves the right to modify or discontinue, temporarily or permanently, the Service (or any part thereof) with or without notice.
-                </Text>
-
-                <Text style={styles.heading}>4. User Conduct</Text>
-                <Text style={styles.paragraph}>
-                    You agree to use the Service only for lawful purposes and in accordance with these Terms. You are responsible for all activity that occurs under your account.
-                </Text>
-
-                <Text style={styles.heading}>5. Payments and Fees</Text>
-                <Text style={styles.paragraph}>
-                    GOGO charges a service fee for each ride booked through the platform. This fee is automatically deducted from the payment made by the user. You will receive your earnings on a weekly basis.
-                </Text>
-
+                        <Text style={styles.paragraph}>
+                            {terms || 'Terms and conditions are being updated. Please check back later.'}
+                        </Text>
+                    </>
+                )}
                 <View style={{ height: 40 }} />
             </ScrollView>
         </View>

@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
+import { useGetCommonContentQuery } from '../../../Redux/api/commonApi';
 
 export default function PrivacyPolicyScreen() {
     const router = useRouter();
+    const { data: contentData, isLoading } = useGetCommonContentQuery({});
+    const policy = contentData?.data?.privacyPolicy;
 
     return (
         <View style={styles.container}>
@@ -22,32 +25,19 @@ export default function PrivacyPolicyScreen() {
             </Animated.View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                <Text style={styles.lastUpdated}>Last Updated: October 2023</Text>
+                {isLoading ? (
+                    <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+                ) : (
+                    <>
+                        <Text style={styles.lastUpdated}>
+                            Last Updated: {contentData?.data?.updatedAt ? new Date(contentData.data.updatedAt).toLocaleDateString() : 'October 2023'}
+                        </Text>
 
-                <Text style={styles.paragraph}>
-                    Your privacy is important to us. It is GOGO's policy to respect your privacy regarding any information we may collect from you across our website and app.
-                </Text>
-
-                <Text style={styles.heading}>1. Information We Collect</Text>
-                <Text style={styles.paragraph}>
-                    We collect information directly from you when you register as a driver, including your name, contact details, vehicle information, and location data while using the app.
-                </Text>
-
-                <Text style={styles.heading}>2. How We Use Information</Text>
-                <Text style={styles.paragraph}>
-                    We use the information we collect to operate and improve our services, facilitate rides, process payments, and communicate with you.
-                </Text>
-
-                <Text style={styles.heading}>3. Information Sharing</Text>
-                <Text style={styles.paragraph}>
-                    We share your information with passengers to facilitate rides. We may also share information with third-party service providers who assist us in operating our business.
-                </Text>
-
-                <Text style={styles.heading}>4. Security</Text>
-                <Text style={styles.paragraph}>
-                    We take reasonable measures to help protect information about you from loss, theft, misuse and unauthorized access, disclosure, alteration and destruction.
-                </Text>
-
+                        <Text style={styles.paragraph}>
+                            {policy || 'Privacy policy content is being updated. Please check back later.'}
+                        </Text>
+                    </>
+                )}
                 <View style={{ height: 40 }} />
             </ScrollView>
         </View>

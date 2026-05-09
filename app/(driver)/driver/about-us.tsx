@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React from 'react';
-import { Image, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
+import { useGetCommonContentQuery } from '../../../Redux/api/commonApi';
 
 export default function AboutUsScreen() {
     const router = useRouter();
+    const { data: contentData, isLoading } = useGetCommonContentQuery({});
+    const about = contentData?.data?.about;
 
     return (
         <View style={styles.container}>
@@ -27,13 +30,13 @@ export default function AboutUsScreen() {
                     <Text style={styles.versionText}>Driver App v1.0.0</Text>
                 </View>
 
-                <Text style={styles.paragraph}>
-                    GOGO is a leading ride-hailing platform committed to providing safe, reliable, and convenient transportation solutions.
-                </Text>
-
-                <Text style={styles.paragraph}>
-                    Our mission is to empower drivers with flexible earning opportunities and to connect passengers with seamless travel experiences.
-                </Text>
+                {isLoading ? (
+                    <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: 20 }} />
+                ) : (
+                    <Text style={styles.paragraph}>
+                        {about || 'GOGO is a leading ride-hailing platform committed to providing safe, reliable, and convenient transportation solutions.'}
+                    </Text>
+                )}
 
                 <Text style={styles.heading}>Our Values</Text>
                 <View style={styles.valueItem}>

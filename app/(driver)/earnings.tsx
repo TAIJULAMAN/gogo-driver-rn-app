@@ -1,15 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/Colors';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { TransactionItem } from '../../components/TransactionItem';
-import {
-    mockEarnings,
-    mockTransactions,
-    mockDailyEarnings,
-    mockDriverStats,
-    formatCurrency
-} from '../../utils/mockData';
+import { Colors } from '../../constants/Colors';
+import { useGetRiderEarningsQuery } from '../../Redux/api/driverApi';
+import { formatCurrency } from '../../utils/mockData';
 
 const { width } = Dimensions.get('window');
 const CHART_WIDTH = width - 40;
@@ -17,15 +12,43 @@ const CHART_HEIGHT = 180;
 
 export default function EarningsScreen() {
     const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('week');
-    const earnings = mockEarnings;
-    const transactions = mockTransactions;
-    const dailyEarnings = mockDailyEarnings;
-    const stats = mockDriverStats;
+    const { data: earningsData, isLoading, refetch } = useGetRiderEarningsQuery({});
 
-    const maxEarning = Math.max(...dailyEarnings.map(d => d.amount));
+    const earnings = earningsData?.data || {
+        total: 0,
+        today: 0,
+        week: 0,
+        month: 0,
+        pending: 0,
+        dailyTrend: [],
+        transactions: []
+    };
+
+    // Prepare chart data (fill missing days of the week)
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const now = new Date();
+    const dailyEarnings = Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date(now);
+        d.setDate(now.getDate() - (6 - i));
+        const dateStr = d.toISOString().split('T')[0];
+        const trendItem = earnings.dailyTrend.find((item: any) => item.date === dateStr);
+        return {
+            date: dateStr,
+            day: days[d.getDay()],
+            amount: trendItem ? trendItem.amount : 0
+        };
+    });
+
+    const transactions = earnings.transactions;
+    
+    const maxEarning = Math.max(...dailyEarnings.map(d => d.amount), 1);
     const barWidth = (CHART_WIDTH / dailyEarnings.length) - 8;
 
     const handleCashOut = () => {
+        if (earnings.total <= 0) {
+            Alert.alert('Info', 'No balance available for cash out.');
+            return;
+        }
         Alert.alert(
             'Cash Out',
             `Cash out ${formatCurrency(earnings.total)}?`,
@@ -39,8 +62,21 @@ export default function EarningsScreen() {
         );
     };
 
+    if (isLoading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+            </View>
+        );
+    }
+
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView 
+            style={styles.container}
+            refreshControl={
+                <RefreshControl refreshing={isLoading} onRefresh={refetch} color={Colors.primary} />
+            }
+        >
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.title}>Earnings</Text>
@@ -110,9 +146,7 @@ export default function EarningsScreen() {
                                             ]}
                                         />
                                     </View>
-                                    <Text style={styles.barLabel}>
-                                        {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                                    </Text>
+                                    <Text style={styles.barLabel}>{day.day}</Text>
                                 </View>
                             );
                         })}
@@ -127,30 +161,22 @@ export default function EarningsScreen() {
                     <View style={styles.statCard}>
                         <Text style={styles.statLabel}>Today</Text>
                         <Text style={styles.statValue}>{formatCurrency(earnings.today)}</Text>
-                        <Text style={styles.statSubtext}>{stats.todayRides} rides</Text>
                     </View>
                     <View style={styles.statCard}>
                         <Text style={styles.statLabel}>This Week</Text>
                         <Text style={styles.statValue}>{formatCurrency(earnings.week)}</Text>
-                        <Text style={styles.statSubtext}>
-                            Avg: {formatCurrency(earnings.week / 7)}/day
-                        </Text>
                     </View>
                 </View>
                 <View style={styles.statsGrid}>
                     <View style={styles.statCard}>
                         <Text style={styles.statLabel}>This Month</Text>
                         <Text style={styles.statValue}>{formatCurrency(earnings.month)}</Text>
-                        <Text style={styles.statSubtext}>
-                            Avg: {formatCurrency(earnings.month / 30)}/day
-                        </Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>Avg/Ride</Text>
+                        <Text style={styles.statLabel}>Avg/Day</Text>
                         <Text style={styles.statValue}>
-                            {formatCurrency(earnings.month / stats.totalRides)}
+                            {formatCurrency(earnings.month / 30)}
                         </Text>
-                        <Text style={styles.statSubtext}>{stats.totalRides} total rides</Text>
                     </View>
                 </View>
             </View>
@@ -158,19 +184,21 @@ export default function EarningsScreen() {
             {/* Transaction History */}
             <View style={styles.transactionSection}>
                 <View style={styles.transactionHeader}>
-                    <Text style={styles.sectionTitle}>Transaction History</Text>
-                    <TouchableOpacity onPress={() => Alert.alert('Filter', 'Filter options coming soon')}>
-                        <Ionicons name="filter" size={20} color={Colors.primary} />
-                    </TouchableOpacity>
+                    <Text style={styles.sectionTitle}>Recent Rides</Text>
                 </View>
                 <View style={styles.transactionList}>
-                    {transactions.map(transaction => (
+                    {transactions.map((transaction: any) => (
                         <TransactionItem
                             key={transaction.id}
                             transaction={transaction}
-                            onPress={() => Alert.alert('Transaction Details', `View details for ${transaction.id}`)}
+                            onPress={() => Alert.alert('Ride Details', `View details for ${transaction.id}`)}
                         />
                     ))}
+                    {transactions.length === 0 && (
+                        <View style={{ padding: 40, alignItems: 'center' }}>
+                            <Text style={{ color: Colors.textLight }}>No recent transactions</Text>
+                        </View>
+                    )}
                 </View>
             </View>
         </ScrollView>
