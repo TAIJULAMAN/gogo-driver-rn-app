@@ -17,11 +17,11 @@ import { router } from "expo-router";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
-import { Colors } from "../../../constants/Colors";
-import { StatCard } from "../../../components/StatCard";
-import { RideCard } from "../../../components/RideCard";
-import { RideCompletionModal } from "../../../components/RideCompletionModal";
-import { formatCurrency } from "../../../utils/mockData";
+import { Colors } from "../../constants/Colors";
+import { StatCard } from "../../components/StatCard";
+import { RideCard } from "../../components/RideCard";
+import { RideCompletionModal } from "../../components/RideCompletionModal";
+import { formatCurrency } from "../../utils/mockData";
 import {
   useGetDriverProfileQuery,
   useUpdateDriverProfileMutation,
@@ -30,7 +30,7 @@ import {
   useUpdateLocationMutation,
   useGetDailyStatsQuery,
   useGetNotificationsQuery,
-} from "../../../Redux/api/driverApi";
+} from "../../Redux/api/driverApi";
 
 export default function DriverHomeScreen() {
   const {
@@ -86,7 +86,7 @@ export default function DriverHomeScreen() {
 
   // Handle Location Updates
   useEffect(() => {
-    let locationInterval: NodeJS.Timeout;
+    let locationInterval: ReturnType<typeof setInterval> | undefined;
 
     const startTracking = async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -256,7 +256,7 @@ export default function DriverHomeScreen() {
             style={styles.notificationButton}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push("/(driver)/notifications");
+              router.push("/driver/notifications");
             }}
           >
             <Ionicons
@@ -389,7 +389,7 @@ export default function DriverHomeScreen() {
             style={styles.quickAction}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push("/(driver)/earnings");
+              router.push("/earnings");
             }}
           >
             <View
@@ -407,7 +407,7 @@ export default function DriverHomeScreen() {
             style={styles.quickAction}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push("/(driver)/rides");
+              router.push("/rides");
             }}
           >
             <View
@@ -443,7 +443,7 @@ export default function DriverHomeScreen() {
             style={styles.quickAction}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push("/(driver)/account");
+              router.push("/account");
             }}
           >
             <View

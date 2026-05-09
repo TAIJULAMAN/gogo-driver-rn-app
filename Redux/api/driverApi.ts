@@ -14,6 +14,14 @@ export const driverApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: ["user"],
         }),
+        updateDriverDocuments: builder.mutation({
+            query: (data) => ({
+                url: "users/me/documents",
+                method: "PATCH",
+                body: data,
+            }),
+            invalidatesTags: ["user"],
+        }),
         updateLocation: builder.mutation({
             query: (data) => ({
                 url: "users/me/location",
@@ -24,6 +32,25 @@ export const driverApi = baseApi.injectEndpoints({
         getActiveRides: builder.query({
             query: () => "orders?status=InProgress",
             providesTags: ["orders"],
+        }),
+        getRiderRides: builder.query({
+            query: ({ status, scope }: { status?: string; scope?: "available" } = {}) => {
+                const params = new URLSearchParams();
+                if (status) params.set("status", status);
+                if (scope) params.set("scope", scope);
+
+                const queryString = params.toString();
+                return `orders${queryString ? `?${queryString}` : ""}`;
+            },
+            providesTags: ["orders"],
+        }),
+        acceptRide: builder.mutation({
+            query: (orderId: string) => ({
+                url: `orders/${orderId}/assign-rider`,
+                method: "PATCH",
+                body: {},
+            }),
+            invalidatesTags: ["orders"],
         }),
         completeRide: builder.mutation({
             query: (orderId) => ({
@@ -52,17 +79,43 @@ export const driverApi = baseApi.injectEndpoints({
             query: () => "dashboard/rider/earnings",
             providesTags: ["earnings"],
         }),
+        getOrderById: builder.query({
+            query: (id: string) => `orders/${id}`,
+            providesTags: ["orders"],
+        }),
+        submitCompletionProof: builder.mutation({
+            query: ({ orderId, formData }: { orderId: string; formData: FormData }) => ({
+                url: `orders/${orderId}/completion-proof`,
+                method: "PATCH",
+                body: formData,
+            }),
+            invalidatesTags: ["orders"],
+        }),
+        markCheckpoint: builder.mutation({
+            query: ({ orderId, ...body }: { orderId: string; pointType: string; stoppageId?: string; note?: string }) => ({
+                url: `orders/${orderId}/checkpoints`,
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: ["orders"],
+        }),
     }),
 });
 
 export const {
     useGetDriverProfileQuery,
     useUpdateDriverProfileMutation,
+    useUpdateDriverDocumentsMutation,
     useUpdateLocationMutation,
     useGetActiveRidesQuery,
+    useGetRiderRidesQuery,
+    useAcceptRideMutation,
     useCompleteRideMutation,
     useGetDailyStatsQuery,
     useGetNotificationsQuery,
     useMarkNotificationAsReadMutation,
     useGetRiderEarningsQuery,
+    useGetOrderByIdQuery,
+    useSubmitCompletionProofMutation,
+    useMarkCheckpointMutation,
 } = driverApi;

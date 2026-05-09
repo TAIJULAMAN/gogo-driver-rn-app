@@ -12,6 +12,7 @@ interface TransactionItemProps {
 
 export function TransactionItem({ transaction, onPress }: TransactionItemProps) {
     const { type, amount, status, date, description } = transaction;
+    const transactionDate = date instanceof Date ? date : new Date(date);
 
     const getTypeIcon = (): keyof typeof Ionicons.glyphMap => {
         switch (type) {
@@ -57,7 +58,7 @@ export function TransactionItem({ transaction, onPress }: TransactionItemProps) 
             <View style={styles.content}>
                 <Text style={styles.description}>{description}</Text>
                 <View style={styles.metaRow}>
-                    <Text style={styles.date}>{formatDate(date)} • {formatTime(date)}</Text>
+                    <Text style={styles.date}>{formatDate(transactionDate)} • {formatTime(transactionDate)}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor()}20` }]}>
                         <Text style={[styles.statusText, { color: getStatusColor() }]}>
                             {status}

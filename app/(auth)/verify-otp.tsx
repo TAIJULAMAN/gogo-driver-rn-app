@@ -114,7 +114,7 @@ export default function VerifyOTPScreen() {
         );
 
         Alert.alert("Success", "Verification successful!");
-        router.replace("/(driver)/driver");
+        router.replace("/(tab)/driver");
       }
     } catch (error: any) {
       console.error("Verification error:", error);

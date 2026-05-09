@@ -5,12 +5,14 @@ import { TransactionItem } from '../../components/TransactionItem';
 import { Colors } from '../../constants/Colors';
 import { useGetRiderEarningsQuery } from '../../Redux/api/driverApi';
 import { formatCurrency } from '../../utils/mockData';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const CHART_WIDTH = width - 40;
 const CHART_HEIGHT = 180;
 
 export default function EarningsScreen() {
+    const insets = useSafeAreaInsets();
     const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('week');
     const { data: earningsData, isLoading, refetch } = useGetRiderEarningsQuery({});
 
@@ -44,38 +46,31 @@ export default function EarningsScreen() {
     const maxEarning = Math.max(...dailyEarnings.map(d => d.amount), 1);
     const barWidth = (CHART_WIDTH / dailyEarnings.length) - 8;
 
-    const handleCashOut = () => {
-        if (earnings.total <= 0) {
-            Alert.alert('Info', 'No balance available for cash out.');
-            return;
-        }
-        Alert.alert(
-            'Cash Out',
-            `Cash out ${formatCurrency(earnings.total)}?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Confirm',
-                    onPress: () => Alert.alert('Success', 'Cash out request submitted!')
-                }
-            ]
-        );
-    };
-
     if (isLoading) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <View
+                style={[
+                    styles.container,
+                    styles.loadingContainer,
+                    { paddingTop: insets.top, paddingBottom: insets.bottom },
+                ]}
+            >
                 <ActivityIndicator size="large" color={Colors.primary} />
             </View>
         );
     }
 
     return (
-        <ScrollView 
-            style={styles.container}
-            refreshControl={
-                <RefreshControl refreshing={isLoading} onRefresh={refetch} color={Colors.primary} />
-            }
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    { paddingBottom: insets.bottom + 110 },
+                ]}
+                refreshControl={
+                    <RefreshControl refreshing={isLoading} onRefresh={refetch} colors={[Colors.primary]} />
+                }
         >
             {/* Header */}
             <View style={styles.header}>
@@ -89,10 +84,6 @@ export default function EarningsScreen() {
                         <Text style={styles.balanceLabel}>Available Balance</Text>
                         <Text style={styles.balanceAmount}>{formatCurrency(earnings.total)}</Text>
                     </View>
-                    <TouchableOpacity style={styles.cashOutButton} onPress={handleCashOut}>
-                        <Ionicons name="wallet" size={20} color={Colors.white} />
-                        <Text style={styles.cashOutText}>Cash Out</Text>
-                    </TouchableOpacity>
                 </View>
                 {earnings.pending > 0 && (
                     <View style={styles.pendingContainer}>
@@ -201,7 +192,8 @@ export default function EarningsScreen() {
                     )}
                 </View>
             </View>
-        </ScrollView>
+            </ScrollView>
+        </View>
     );
 }
 
@@ -209,6 +201,16 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.background,
+    },
+    loadingContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
     },
     header: {
         padding: 20,
@@ -242,20 +244,6 @@ const styles = StyleSheet.create({
         fontSize: 40,
         fontWeight: 'bold',
         color: Colors.secondary,
-    },
-    cashOutButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: Colors.secondary,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 8,
-        gap: 6,
-    },
-    cashOutText: {
-        color: Colors.white,
-        fontSize: 14,
-        fontWeight: '600',
     },
     pendingContainer: {
         flexDirection: 'row',

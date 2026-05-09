@@ -92,7 +92,7 @@ export default function HelpCenterScreen() {
                     <Text style={styles.contactTitle}>Still need help?</Text>
                     <TouchableOpacity
                         style={styles.contactButton}
-                        onPress={() => router.push('/(driver)/driver/contact-us')}
+                        onPress={() => router.push('/driver/contact-us')}
                     >
                         <Text style={styles.contactButtonText}>Contact Support</Text>
                     </TouchableOpacity>

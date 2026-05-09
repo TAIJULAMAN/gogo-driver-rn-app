@@ -5,12 +5,12 @@ import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View,
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { FileUpload } from '../../../components/FileUpload';
 import { Colors } from '../../../constants/Colors';
-import { useGetDriverProfileQuery, useUpdateDriverProfileMutation } from '../../../Redux/api/driverApi';
+import { useGetDriverProfileQuery, useUpdateDriverDocumentsMutation } from '../../../Redux/api/driverApi';
 
 export default function DocumentsScreen() {
     const router = useRouter();
     const { data: profileData } = useGetDriverProfileQuery({});
-    const [updateProfile, { isLoading: isUpdating }] = useUpdateDriverProfileMutation();
+    const [updateDocuments, { isLoading: isUpdating }] = useUpdateDriverDocumentsMutation();
     
     const user = profileData?.data;
     const [emiratesId, setEmiratesId] = useState<string | undefined>(undefined);
@@ -52,7 +52,7 @@ export default function DocumentsScreen() {
         }
 
         try {
-            await updateProfile(formData).unwrap();
+            await updateDocuments(formData).unwrap();
             Alert.alert(
                 'Success',
                 'Documents uploaded successfully',

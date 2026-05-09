@@ -9,7 +9,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { Colors } from "../../../constants/Colors";
@@ -19,7 +18,7 @@ export default function ReferralScreen() {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
 
-  const { data: profileData, isLoading } = useGetDriverProfileQuery({});
+  const { data: profileData } = useGetDriverProfileQuery({});
   const user = profileData?.data;
   const referralCode = user?.referralCode || "...";
 
@@ -45,13 +44,21 @@ export default function ReferralScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Referral</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
       <View style={styles.content}>
         {/* Illustration */}
         <Animated.View
           entering={FadeInUp.delay(200)}
           style={styles.imageContainer}
         >
-          <Ionicons name="gift" size={150} color={Colors.primary} />
+          <Ionicons name="gift" size={150} color="#4CAF50" />
         </Animated.View>
 
         {/* Text Content */}
@@ -83,10 +90,10 @@ export default function ReferralScreen() {
               <Ionicons
                 name={copied ? "checkmark" : "copy-outline"}
                 size={20}
-                color={copied ? Colors.primary : Colors.text}
+                color={copied ? "#4CAF50" : Colors.primaryDark}
               />
               <Text
-                style={[styles.copyText, copied && { color: Colors.primary }]}
+                style={[styles.copyText, copied && { color: "#4CAF50" }]}
               >
                 {copied ? "Copied" : "Copy"}
               </Text>
@@ -101,7 +108,7 @@ export default function ReferralScreen() {
         >
           <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
             <Text style={styles.shareButtonText}>Share Code</Text>
-            <Ionicons name="share-outline" size={20} color="#fff" />
+            <Ionicons name="share-outline" size={20} color="#000" />
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -169,7 +176,7 @@ const styles = StyleSheet.create({
   },
   highlight: {
     fontWeight: "700",
-    color: Colors.primary,
+    color: Colors.primaryDark,
   },
   codeContainer: {
     width: "100%",
@@ -216,7 +223,7 @@ const styles = StyleSheet.create({
   copyText: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.text,
+    color: Colors.primaryDark,
     marginLeft: 6,
   },
   actionContainer: {
@@ -238,7 +245,7 @@ const styles = StyleSheet.create({
   shareButtonText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#fff",
+    color: "#000",
     marginRight: 12,
   },
 });

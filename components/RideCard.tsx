@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Ride } from '../types';
@@ -9,11 +9,13 @@ interface RideCardProps {
     ride: Ride;
     onAccept?: () => void;
     onReject?: () => void;
+    onComplete?: () => void;
     onPress?: () => void;
     showActions?: boolean;
+    isAccepting?: boolean;
 }
 
-export function RideCard({ ride, onAccept, onReject, onPress, showActions = false }: RideCardProps) {
+export function RideCard({ ride, onAccept, onReject, onComplete, onPress, showActions = false, isAccepting = false }: RideCardProps) {
     const { passenger, pickup, dropoff, fare, distance, status } = ride;
 
     const getStatusColor = () => {
@@ -72,20 +74,40 @@ export function RideCard({ ride, onAccept, onReject, onPress, showActions = fals
                 </View>
             </View>
 
-            {showActions && (
+            {(showActions || onAccept || onReject || onComplete) && (
                 <View style={styles.actions}>
-                    <TouchableOpacity
-                        style={[styles.actionButton, styles.rejectButton]}
-                        onPress={onReject}
-                    >
-                        <Text style={styles.rejectText}>Reject</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.actionButton, styles.acceptButton]}
-                        onPress={onAccept}
-                    >
-                        <Text style={styles.acceptText}>Accept</Text>
-                    </TouchableOpacity>
+                    {onComplete ? (
+                        <TouchableOpacity
+                            style={[styles.actionButton, styles.acceptButton]}
+                            onPress={onComplete}
+                        >
+                            <Text style={styles.acceptText}>Complete</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <>
+                            {(showActions || onReject) && (
+                                <TouchableOpacity
+                                    style={[styles.actionButton, styles.rejectButton]}
+                                    onPress={onReject}
+                                >
+                                    <Text style={styles.rejectText}>Reject</Text>
+                                </TouchableOpacity>
+                            )}
+                            {(showActions || onAccept || isAccepting) && (
+                                <TouchableOpacity
+                                    style={[styles.actionButton, styles.acceptButton, isAccepting && { opacity: 0.7 }]}
+                                    onPress={onAccept}
+                                    disabled={isAccepting}
+                                >
+                                    {isAccepting ? (
+                                        <ActivityIndicator size="small" color={Colors.secondary} />
+                                    ) : (
+                                        <Text style={styles.acceptText}>Accept</Text>
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                        </>
+                    )}
                 </View>
             )}
         </TouchableOpacity>
