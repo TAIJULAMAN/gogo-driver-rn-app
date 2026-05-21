@@ -58,7 +58,7 @@ export interface Transaction {
     type: TransactionType;
     amount: number;
     status: TransactionStatus;
-    date: Date;
+    date: Date | string;
     description: string;
     rideId?: string;
 }

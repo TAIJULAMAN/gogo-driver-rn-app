@@ -247,9 +247,12 @@ export const formatCurrency = (amount: number): string => {
 };
 
 // Helper function to format date
-export const formatDate = (date: Date): string => {
+export const formatDate = (date: Date | string | number): string => {
+    const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+    if (!d || isNaN(d.getTime())) return '';
+    
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const diff = now.getTime() - d.getTime();
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
@@ -260,10 +263,12 @@ export const formatDate = (date: Date): string => {
     if (days === 1) return 'Yesterday';
     if (days < 7) return `${days} days ago`;
 
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
 // Helper function to format time
-export const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+export const formatTime = (date: Date | string | number): string => {
+    const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+    if (!d || isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 };
