@@ -8,7 +8,7 @@ export const commonApi = baseApi.injectEndpoints({
         }),
         createReport: builder.mutation({
             query: (data) => ({
-                url: "report",
+                url: "reports",
                 method: "POST",
                 body: data,
             }),
