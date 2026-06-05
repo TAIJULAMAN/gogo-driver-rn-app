@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "GOGO",
+    "slug": "gogo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo/logo.png",
+    "scheme": "gogo",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/logo/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2D3748"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gogo.driver",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "config": {
+        "googleMapsApiKey": "AIzaSyCXZXVJBpulTKut-Sv2DL2MJXICLhpnVtY"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo/logo.png",
+        "backgroundColor": "#2D3748"
+      },
+      "package": "com.gogo.driver",
+      "googleServicesFile": "./google-services.json",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCXZXVJBpulTKut-Sv2DL2MJXICLhpnVtY"
+        }
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/logo/logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo/logo.png",
+          "imageWidth": 200,
+          "backgroundColor": "#2D3748"
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "iosGoogleMapsApiKey": "AIzaSyCXZXVJBpulTKut-Sv2DL2MJXICLhpnVtY",
+          "androidGoogleMapsApiKey": "AIzaSyCXZXVJBpulTKut-Sv2DL2MJXICLhpnVtY"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "833caf8e-4c30-49eb-a3e6-9e051f44d56f"
+      }
+    }
+  }
+}
