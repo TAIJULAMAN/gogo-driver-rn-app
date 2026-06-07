@@ -9,7 +9,7 @@ import { useGetCommonContentQuery } from '../../../Redux/api/commonApi';
 export default function TermsServiceScreen() {
     const router = useRouter();
     const { data: contentData, isLoading } = useGetCommonContentQuery({});
-    const terms = contentData?.data?.termsAndConditions;
+    const terms = contentData?.data?.termsOfService;
 
     return (
         <View style={styles.container}>

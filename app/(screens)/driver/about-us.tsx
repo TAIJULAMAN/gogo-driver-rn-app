@@ -9,7 +9,7 @@ import { useGetCommonContentQuery } from '../../../Redux/api/commonApi';
 export default function AboutUsScreen() {
     const router = useRouter();
     const { data: contentData, isLoading } = useGetCommonContentQuery({});
-    const about = contentData?.data?.about;
+    const about = contentData?.data?.aboutUs;
 
     return (
         <View style={styles.container}>

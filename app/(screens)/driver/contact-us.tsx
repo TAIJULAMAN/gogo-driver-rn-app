@@ -16,8 +16,8 @@ export default function ContactUsScreen() {
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
 
-    const contactEmail = contentData?.data?.contactEmail || 'support@gogo.com';
-    const contactPhone = contentData?.data?.contactPhone || '+971 50 123 4567';
+    const contactEmail = contentData?.data?.contactUs?.email || 'support@gogo.com';
+    const contactPhone = contentData?.data?.contactUs?.phone || '+971 50 123 4567';
 
     const handleSubmit = async () => {
         if (!subject || !message) {
