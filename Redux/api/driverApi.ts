@@ -45,10 +45,10 @@ export const driverApi = baseApi.injectEndpoints({
             providesTags: ["orders"],
         }),
         acceptRide: builder.mutation({
-            query: (orderId: string) => ({
+            query: ({ orderId, riderId }: { orderId: string; riderId: string }) => ({
                 url: `orders/${orderId}/assign-rider`,
                 method: "PATCH",
-                body: {},
+                body: { riderId },
             }),
             invalidatesTags: ["orders"],
         }),

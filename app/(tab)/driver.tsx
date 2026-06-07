@@ -58,17 +58,19 @@ export default function DriverHomeScreen() {
   }, [refetchProfile, refetchRides, refetchStats, refetchNotifications]);
 
   const user = profileData?.data;
-  const activeRide = ridesData?.data?.[0]; // Get the first active ride
-  const stats = statsData?.data || {
-    todayRides: 0,
-    todayEarnings: 0,
-    hoursOnline: 0,
-    averageRating: 0,
-    totalRides: 0,
-    acceptanceRate: 100,
+  const activeRidesList = ridesData?.data?.result || (Array.isArray(ridesData?.data) ? ridesData?.data : []);
+  const activeRide = activeRidesList[0]; // Get the first active ride
+  const statsRaw = statsData?.data || {};
+  const stats = {
+    todayRides: statsRaw.todayRides || 0,
+    todayEarnings: statsRaw.todayEarnings || 0,
+    hoursOnline: statsRaw.hoursOnline || 0,
+    averageRating: statsRaw.averageRating || 0,
+    totalRides: statsRaw.totalRides || 0,
+    acceptanceRate: statsRaw.acceptanceRate ?? 100,
   };
 
-  const notifications = notificationsData?.data || [];
+  const notifications = notificationsData?.data?.result || (Array.isArray(notificationsData?.data) ? notificationsData?.data : []);
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
 
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
@@ -372,7 +374,7 @@ export default function DriverHomeScreen() {
           <StatCard
             icon="star"
             label="Rating"
-            value={stats.averageRating.toFixed(1)}
+            value={(stats.averageRating || 0).toFixed(1)}
             iconColor={Colors.warning}
           />
         </View>
@@ -479,7 +481,7 @@ export default function DriverHomeScreen() {
             <View style={styles.ratingRow}>
               <Ionicons name="star" size={16} color={Colors.warning} />
               <Text style={styles.statRowValue}>
-                {stats.averageRating.toFixed(1)}
+                {(stats.averageRating || 0).toFixed(1)}
               </Text>
             </View>
           </View>

@@ -16,14 +16,15 @@ export default function EarningsScreen() {
     const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('week');
     const { data: earningsData, isLoading, refetch } = useGetRiderEarningsQuery({});
 
-    const earnings = earningsData?.data || {
-        total: 0,
-        today: 0,
-        week: 0,
-        month: 0,
-        pending: 0,
-        dailyTrend: [],
-        transactions: []
+    const earningsRaw = earningsData?.data || {};
+    const earnings = {
+        total: earningsRaw.total || 0,
+        today: earningsRaw.today || 0,
+        week: earningsRaw.week || 0,
+        month: earningsRaw.month || 0,
+        pending: earningsRaw.pending || 0,
+        dailyTrend: earningsRaw.dailyTrend || [],
+        transactions: earningsRaw.transactions || []
     };
 
     // Prepare chart data (fill missing days of the week)
@@ -33,7 +34,7 @@ export default function EarningsScreen() {
         const d = new Date(now);
         d.setDate(now.getDate() - (6 - i));
         const dateStr = d.toISOString().split('T')[0];
-        const trendItem = earnings.dailyTrend.find((item: any) => item.date === dateStr);
+        const trendItem = (earnings.dailyTrend || []).find((item: any) => item.date === dateStr);
         return {
             date: dateStr,
             day: days[d.getDay()],
@@ -41,7 +42,7 @@ export default function EarningsScreen() {
         };
     });
 
-    const transactions = earnings.transactions;
+    const transactions = earnings.transactions || [];
     
     const maxEarning = Math.max(...dailyEarnings.map(d => d.amount), 1);
     const barWidth = (CHART_WIDTH / dailyEarnings.length) - 8;

@@ -35,6 +35,7 @@ type BackendRide = Ride & {
 };
 
 const getOrders = (payload: any) => {
+  if (Array.isArray(payload?.data?.result)) return payload.data.result;
   if (Array.isArray(payload?.data)) return payload.data;
   if (Array.isArray(payload)) return payload;
   return [];
@@ -161,8 +162,17 @@ export default function RidesScreen() {
   const handleAccept = async (rideId: string) => {
     setAcceptingRideId(rideId);
     
+    const riderId = user?._id ?? user?.id;
+    console.log("handleAccept - rideId:", rideId, "riderId:", riderId, "user:", JSON.stringify(user));
+    
+    if (!riderId) {
+      Alert.alert("Error", "Unable to identify your account. Please log in again.");
+      setAcceptingRideId(null);
+      return;
+    }
+
     try {
-      await acceptRide(rideId).unwrap();
+      await acceptRide({ orderId: rideId, riderId }).unwrap();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRejectedRideIds((prev) => prev.filter((id) => id !== rideId));
       setActiveTab("active");
