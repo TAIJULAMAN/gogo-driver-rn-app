@@ -243,7 +243,7 @@ export const mockEarnings: Earnings = {
 
 // Helper function to format currency
 export const formatCurrency = (amount: number): string => {
-    return `AED ${Math.abs(amount).toFixed(2)}`;
+    return `AED ${Math.abs(amount).toFixed(0)}`;
 };
 
 // Helper function to format date
