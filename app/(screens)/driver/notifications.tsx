@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, StatusBar, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
@@ -11,6 +12,45 @@ export default function NotificationsScreen() {
     const [emailEnabled, setEmailEnabled] = useState(true);
     const [smsEnabled, setSmsEnabled] = useState(false);
     const [promoEnabled, setPromoEnabled] = useState(true);
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    useEffect(() => {
+        const loadSettings = async () => {
+            try {
+                const savedSettings = await AsyncStorage.getItem('driver_notification_settings');
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    if (settings.pushEnabled !== undefined) setPushEnabled(settings.pushEnabled);
+                    if (settings.emailEnabled !== undefined) setEmailEnabled(settings.emailEnabled);
+                    if (settings.smsEnabled !== undefined) setSmsEnabled(settings.smsEnabled);
+                    if (settings.promoEnabled !== undefined) setPromoEnabled(settings.promoEnabled);
+                }
+            } catch (error) {
+                console.error('Failed to load notification settings:', error);
+            } finally {
+                setIsLoaded(true);
+            }
+        };
+        loadSettings();
+    }, []);
+
+    useEffect(() => {
+        if (!isLoaded) return;
+        const saveSettings = async () => {
+            try {
+                const settings = {
+                    pushEnabled,
+                    emailEnabled,
+                    smsEnabled,
+                    promoEnabled
+                };
+                await AsyncStorage.setItem('driver_notification_settings', JSON.stringify(settings));
+            } catch (error) {
+                console.error('Failed to save notification settings:', error);
+            }
+        };
+        saveSettings();
+    }, [pushEnabled, emailEnabled, smsEnabled, promoEnabled, isLoaded]);
 
     return (
         <View style={styles.container}>
