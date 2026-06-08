@@ -69,7 +69,7 @@ export default function ReferralScreen() {
           <Text style={styles.title}>Invite Friends</Text>
           <Text style={styles.subtitle}>
             Share your code with friends and get{" "}
-            <Text style={styles.highlight}>$50.00</Text> when they complete 10
+            <Text style={styles.highlight}>AED 50.00</Text> when they complete 10
             rides!
           </Text>
         </Animated.View>

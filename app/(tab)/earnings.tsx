@@ -126,7 +126,7 @@ export default function EarningsScreen() {
                             return (
                                 <View key={index} style={styles.barContainer}>
                                     <View style={styles.barWrapper}>
-                                        <Text style={styles.barAmount}>${day.amount.toFixed(0)}</Text>
+                                        <Text style={styles.barAmount}>AED {day.amount.toFixed(0)}</Text>
                                         <View
                                             style={[
                                                 styles.bar,

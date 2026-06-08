@@ -36,19 +36,19 @@ export function RideCompletionModal({ visible, onClose, onRate, fare, tip = 0 }:
                     <View style={styles.earningsCard}>
                         <View style={styles.earningRow}>
                             <Text style={styles.earningLabel}>Fare</Text>
-                            <Text style={styles.earningValue}>${fare.toFixed(2)}</Text>
+                            <Text style={styles.earningValue}>AED {fare.toFixed(2)}</Text>
                         </View>
                         {tip > 0 && (
                             <View style={styles.earningRow}>
                                 <Text style={styles.earningLabel}>Tip</Text>
                                 <Text style={[styles.earningValue, { color: Colors.success }]}>
-                                    +${tip.toFixed(2)}
+                                    +AED {tip.toFixed(2)}
                                 </Text>
                             </View>
                         )}
                         <View style={[styles.earningRow, styles.totalRow]}>
                             <Text style={styles.totalLabel}>Total Earned</Text>
-                            <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+                            <Text style={styles.totalValue}>AED {total.toFixed(2)}</Text>
                         </View>
                     </View>
 
