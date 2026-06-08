@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "GOGO",
-    "slug": "gogo",
+    "name": "GOGO Earn",
+    "slug": "gogo-earn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo/logo.png",
-    "scheme": "gogo",
+    "scheme": "gogo-earn",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -32,7 +32,10 @@
         "googleMaps": {
           "apiKey": "AIzaSyCXZXVJBpulTKut-Sv2DL2MJXICLhpnVtY"
         }
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -68,8 +71,9 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "833caf8e-4c30-49eb-a3e6-9e051f44d56f"
+        "projectId": "87b9bebf-0f6b-44a9-bbca-376a234d9ca7"
       }
     }
   }
