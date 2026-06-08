@@ -1,104 +1,125 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
+import { ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Linking } from 'react-native';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
 import { useGetCommonContentQuery } from '@/Redux/api/commonApi';
 
-const FAQItem = ({ question, answer }: { question: string, answer: string }) => {
-    const [expanded, setExpanded] = useState(false);
-
-    return (
-        <View style={styles.faqItem}>
-            <TouchableOpacity
-                style={styles.faqHeader}
-                onPress={() => setExpanded(!expanded)}
-                activeOpacity={0.7}
-            >
-                <Text style={styles.question}>{question}</Text>
-                <Ionicons
-                    name={expanded ? "chevron-up" : "chevron-down"}
-                    size={20}
-                    color={Colors.textLight}
-                />
-            </TouchableOpacity>
-            {expanded && (
-                <Animated.View layout={Layout.springify()}>
-                    <Text style={styles.answer}>{answer}</Text>
-                </Animated.View>
-            )}
-        </View>
-    );
-};
-
 export default function HelpCenterScreen() {
     const router = useRouter();
-    const { data: contentData, isLoading } = useGetCommonContentQuery({});
-    const faqs = contentData?.data?.faqs || [];
+    const [searchQuery, setSearchQuery] = useState('');
+    const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const { data: commonData, isLoading } = useGetCommonContentQuery({});
+
+    const faqs = commonData?.data?.faqs || [];
+    const contactPhone = commonData?.data?.contactUs?.phone || '+971 50 123 4567';
+
+    const filteredFAQs = faqs.filter((faq: any) =>
+        faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const handleCallSupport = () => {
+        Linking.openURL(`tel:${contactPhone}`);
+    };
 
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" />
             <Stack.Screen options={{ headerShown: false }} />
 
-            <Animated.View entering={FadeInUp.delay(100)} style={styles.header}>
+            {/* Header */}
+            <Animated.View
+                entering={FadeInUp.delay(100).duration(600)}
+                style={styles.header}
+            >
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={Colors.text} />
+                    <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Help Center</Text>
                 <View style={{ width: 24 }} />
             </Animated.View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+                <Animated.View entering={FadeInDown.delay(200).duration(600)}>
+                    {/* Search */}
+                    <View style={styles.searchContainer}>
+                        <Ionicons name="search" size={20} color="#999" />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Search for help..."
+                            placeholderTextColor="#999"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                        />
+                    </View>
 
-                {isLoading ? (
-                    <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 20 }} />
-                ) : faqs.length > 0 ? (
-                    faqs.map((faq: any, index: number) => (
-                        <FAQItem
-                            key={index}
-                            question={faq.question}
-                            answer={faq.answer}
-                        />
-                    ))
-                ) : (
-                    <>
-                        <FAQItem
-                            question="How do I view my earnings?"
-                            answer="You can view your daily, weekly, and monthly earnings in the Earnings tab. Tap on any entry to see detailed breakdowns."
-                        />
-                        <FAQItem
-                            question="How do I change my vehicle details?"
-                            answer="Go to Account > Vehicle Information to update your vehicle make, model, year, or plate number."
-                        />
-                        <FAQItem
-                            question="What if a passenger leaves an item behind?"
-                            answer="Please report lost items immediately through the 'Contact Us' page or call support directly."
-                        />
-                        <FAQItem
-                            question="How are fares calculated?"
-                            answer="Fares are calculated based on time and distance, plus a base fare. Surge pricing may apply during high demand."
-                        />
-                        <FAQItem
-                            question="How do I update my documents?"
-                            answer="Go to Account > Documents to upload new photos of your license, ID, or vehicle registration."
-                        />
-                    </>
-                )}
+                    {/* Quick Actions */}
+                    <View style={styles.quickActions}>
+                        <TouchableOpacity
+                            style={styles.actionCard}
+                            onPress={() => router.push('/driver/contact-us')}
+                        >
+                            <View style={styles.actionIcon}>
+                                <Ionicons name="chatbubble-ellipses" size={24} color={Colors.primaryDark} />
+                            </View>
+                            <Text style={styles.actionTitle}>Contact Us</Text>
+                            <Text style={styles.actionSubtitle}>Get in touch</Text>
+                        </TouchableOpacity>
 
-                <View style={styles.contactSupport}>
-                    <Text style={styles.contactTitle}>Still need help?</Text>
-                    <TouchableOpacity
-                        style={styles.contactButton}
-                        onPress={() => router.push('/driver/contact-us')}
-                    >
-                        <Text style={styles.contactButtonText}>Contact Support</Text>
-                    </TouchableOpacity>
-                </View>
+                        <TouchableOpacity style={styles.actionCard} onPress={handleCallSupport}>
+                            <View style={styles.actionIcon}>
+                                <Ionicons name="call" size={24} color={Colors.primaryDark} />
+                            </View>
+                            <Text style={styles.actionTitle}>Call Support</Text>
+                            <Text style={styles.actionSubtitle}>24/7 Available</Text>
+                        </TouchableOpacity>
+                    </View>
 
-                <View style={{ height: 40 }} />
+                    {/* FAQs */}
+                    <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+
+                    {isLoading ? (
+                        <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                            <ActivityIndicator size="large" color={Colors.primaryDark} />
+                            <Text style={{ marginTop: 10, color: '#999' }}>Loading FAQs...</Text>
+                        </View>
+                    ) : filteredFAQs.length === 0 ? (
+                        <View style={styles.emptyState}>
+                            <Ionicons name="search-outline" size={48} color="#ccc" />
+                            <Text style={styles.emptyText}>No results found</Text>
+                            <Text style={styles.emptySubtext}>Try a different search term</Text>
+                        </View>
+                    ) : (
+                        filteredFAQs.map((faq: any, index: number) => (
+                            <Animated.View
+                                key={index}
+                                entering={FadeInDown.delay(300 + index * 50).duration(600)}
+                            >
+                                <TouchableOpacity
+                                    style={styles.faqCard}
+                                    onPress={() => setExpandedIndex(expandedIndex === index ? null : index)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={styles.faqHeader}>
+                                        <Text style={styles.faqQuestion}>{faq.question}</Text>
+                                        <Ionicons
+                                            name={expandedIndex === index ? 'chevron-up' : 'chevron-down'}
+                                            size={20}
+                                            color="#999"
+                                        />
+                                    </View>
+                                    {expandedIndex === index && (
+                                        <Text style={styles.faqAnswer}>{faq.answer}</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </Animated.View>
+                        ))
+                    )}
+
+                    <View style={{ height: 40 }} />
+                </Animated.View>
             </ScrollView>
         </View>
     );
@@ -107,7 +128,7 @@ export default function HelpCenterScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#f8f9fa',
     },
     header: {
         flexDirection: 'row',
@@ -118,7 +139,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#EEE',
+        borderBottomColor: '#F0F0F0',
     },
     backButton: {
         padding: 4,
@@ -130,65 +151,107 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
+        paddingHorizontal: 20,
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        height: 52,
+        marginTop: 20,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+    },
+    searchInput: {
+        flex: 1,
+        marginLeft: 12,
+        fontSize: 15,
+        color: Colors.text,
+    },
+    quickActions: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 32,
+    },
+    actionCard: {
+        flex: 1,
+        backgroundColor: '#fff',
+        borderRadius: 16,
         padding: 20,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+    },
+    actionIcon: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#F0FFF0',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
+    },
+    actionTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: Colors.text,
+        marginBottom: 4,
+    },
+    actionSubtitle: {
+        fontSize: 12,
+        color: '#999',
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '700',
         color: Colors.text,
         marginBottom: 16,
     },
-    faqItem: {
+    faqCard: {
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
         marginBottom: 12,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
     },
     faqHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    question: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: Colors.text,
+    faqQuestion: {
         flex: 1,
-        marginRight: 10,
-    },
-    answer: {
-        marginTop: 12,
-        fontSize: 14,
-        color: '#555',
-        lineHeight: 20,
-    },
-    contactSupport: {
-        marginTop: 32,
-        alignItems: 'center',
-        padding: 24,
-        backgroundColor: '#E8F5E9',
-        borderRadius: 16,
-    },
-    contactTitle: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
         color: Colors.text,
-        marginBottom: 12,
+        marginRight: 12,
     },
-    contactButton: {
-        backgroundColor: Colors.primary,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 24,
-    },
-    contactButtonText: {
+    faqAnswer: {
         fontSize: 14,
-        fontWeight: '700',
-        color: '#fff',
+        color: '#666',
+        lineHeight: 20,
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#F5F5F5',
+    },
+    emptyState: {
+        alignItems: 'center',
+        paddingVertical: 60,
+    },
+    emptyText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#999',
+        marginTop: 16,
+    },
+    emptySubtext: {
+        fontSize: 14,
+        color: '#ccc',
+        marginTop: 4,
     },
 });
