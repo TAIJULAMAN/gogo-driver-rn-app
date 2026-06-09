@@ -67,6 +67,7 @@ const decodePolyline = (encoded: string): LatLng[] => {
     do { byte = encoded.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
     lng += result & 1 ? ~(result >> 1) : result >> 1;
     coords.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
+  }
   return coords;
 };
 
