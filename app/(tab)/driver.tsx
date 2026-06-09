@@ -19,14 +19,10 @@ import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
 import { Colors } from "../../constants/Colors";
 import { StatCard } from "../../components/StatCard";
-import { RideCard } from "../../components/RideCard";
-import { RideCompletionModal } from "../../components/RideCompletionModal";
 import { formatCurrency } from "../../utils/mockData";
 import {
   useGetDriverProfileQuery,
   useUpdateDriverProfileMutation,
-  useGetActiveRidesQuery,
-  useCompleteRideMutation,
   useUpdateLocationMutation,
   useGetDailyStatsQuery,
   useGetNotificationsQuery,
@@ -38,28 +34,20 @@ export default function DriverHomeScreen() {
     isLoading: isProfileLoading,
     refetch: refetchProfile,
   } = useGetDriverProfileQuery({});
-  const {
-    data: ridesData,
-    isLoading: isRidesLoading,
-    refetch: refetchRides,
-  } = useGetActiveRidesQuery({});
   const { data: statsData, refetch: refetchStats } = useGetDailyStatsQuery({});
   const { data: notificationsData, refetch: refetchNotifications } = useGetNotificationsQuery({});
   const [updateStatus] = useUpdateDriverProfileMutation();
   const [updateLocation] = useUpdateLocationMutation();
-  const [completeRide] = useCompleteRideMutation();
 
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchProfile(), refetchRides(), refetchStats(), refetchNotifications()]);
+    await Promise.all([refetchProfile(), refetchStats(), refetchNotifications()]);
     setRefreshing(false);
-  }, [refetchProfile, refetchRides, refetchStats, refetchNotifications]);
+  }, [refetchProfile, refetchStats, refetchNotifications]);
 
   const user = profileData?.data;
-  const activeRidesList = ridesData?.data?.result || (Array.isArray(ridesData?.data) ? ridesData?.data : []);
-  const activeRide = activeRidesList[0]; // Get the first active ride
   const statsRaw = statsData?.data || {};
   const stats = {
     todayRides: statsRaw.todayRides || 0,
@@ -77,7 +65,7 @@ export default function DriverHomeScreen() {
   const [isOnline, setIsOnline] = useState(
     user?.status === "Approved" || user?.isOnline,
   );
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
+
 
   // Sync local online state with profile data
   useEffect(() => {
@@ -167,34 +155,7 @@ export default function DriverHomeScreen() {
     }
   };
 
-  const handleCompleteRide = async () => {
-    if (!activeRide?._id) return;
 
-    try {
-      await completeRide(activeRide._id).unwrap();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setShowCompletionModal(true);
-    } catch (error) {
-      Alert.alert("Error", "Failed to complete ride");
-    }
-  };
-
-  const handleNavigate = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert("Navigate", "Opening navigation to destination...");
-  };
-
-  const handleContact = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (activeRide?.user?.phoneNumber) {
-      Alert.alert("Contact Passenger", `Call ${activeRide.user.phoneNumber}?`);
-    }
-  };
-
-  const handleRatePassenger = () => {
-    setShowCompletionModal(false);
-    Alert.alert("Rate Passenger", "Rating screen would open here");
-  };
 
   if (isProfileLoading) {
     return (
@@ -312,37 +273,7 @@ export default function DriverHomeScreen() {
         )}
       </Animated.View>
 
-      {/* Active Ride Card */}
-      {isOnline && activeRide && (
-        <Animated.View
-          entering={FadeInDown.delay(400).duration(600)}
-          style={styles.section}
-        >
-          <Text style={styles.sectionTitle}>Active Ride</Text>
-          <RideCard ride={activeRide} />
-          <View style={styles.rideActions}>
-            <TouchableOpacity style={styles.actionBtn} onPress={handleNavigate}>
-              <Ionicons name="navigate" size={20} color={Colors.white} />
-              <Text style={styles.actionBtnText}>Navigate</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn} onPress={handleContact}>
-              <Ionicons name="call" size={20} color={Colors.white} />
-              <Text style={styles.actionBtnText}>Contact</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.completeBtn]}
-              onPress={handleCompleteRide}
-            >
-              <Ionicons
-                name="checkmark-circle"
-                size={20}
-                color={Colors.white}
-              />
-              <Text style={styles.actionBtnText}>Complete</Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      )}
+
 
       {/* Stats Section */}
       <Animated.View
@@ -488,13 +419,7 @@ export default function DriverHomeScreen() {
         </View>
       </Animated.View>
 
-      <RideCompletionModal
-        visible={showCompletionModal}
-        onClose={() => setShowCompletionModal(false)}
-        onRate={handleRatePassenger}
-        fare={activeRide?.price || 0}
-        tip={0}
-      />
+
     </ScrollView>
   );
 }

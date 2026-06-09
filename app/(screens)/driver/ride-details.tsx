@@ -67,9 +67,10 @@ const decodePolyline = (encoded: string): LatLng[] => {
     do { byte = encoded.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
     lng += result & 1 ? ~(result >> 1) : result >> 1;
     coords.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
-  }
   return coords;
 };
+
+const EMPTY_ARRAY: any[] = [];
 
 export default function RideDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -80,7 +81,7 @@ export default function RideDetailsScreen() {
   const [markCheckpoint, { isLoading: isMarkingCheckpoint }] = useMarkCheckpointMutation();
 
   const order = data?.data || data;
-  const stoppages = order?.stoppages || [];
+  const stoppages = order?.stoppages || EMPTY_ARRAY;
   const [proofPhoto, setProofPhoto] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -116,7 +117,9 @@ export default function RideDetailsScreen() {
 
   useEffect(() => {
     if (!hasValidCoords || !GOOGLE_API_KEY || polylineCoords.length < 2) {
-      setRoadRoute([]);
+      if (roadRoute.length > 0) {
+        setRoadRoute([]);
+      }
       return;
     }
 
@@ -139,14 +142,19 @@ export default function RideDetailsScreen() {
         );
         const json = await res.json();
         const encoded = json?.routes?.[0]?.overview_polyline?.points;
-        setRoadRoute(encoded ? decodePolyline(encoded) : []);
+        const decoded = encoded ? decodePolyline(encoded) : [];
+        setRoadRoute(decoded);
       } catch (e: any) {
-        if (e?.name !== "AbortError") setRoadRoute([]);
+        if (e?.name !== "AbortError") {
+          if (roadRoute.length > 0) {
+            setRoadRoute([]);
+          }
+        }
       }
     })();
 
     return () => controller.abort();
-  }, [routeKey, hasValidCoords, polylineCoords]);
+  }, [routeKey, hasValidCoords]);
 
   const visibleRoute = roadRoute.length > 1 ? roadRoute : polylineCoords;
 
