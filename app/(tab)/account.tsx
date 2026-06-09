@@ -373,6 +373,23 @@ export default function AccountScreen() {
 
           <View style={styles.menuDivider} />
 
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/driver/about-us")}
+          >
+            <View style={[styles.menuIconCircle, { backgroundColor: "#F8FAFC" }]}>
+              <Ionicons
+                name="information-circle-outline"
+                size={20}
+                color="#64748B"
+              />
+            </View>
+            <Text style={styles.menuItemText}>About Us</Text>
+            <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
+
           <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
             <View style={[styles.menuIconCircle, { backgroundColor: "#FFF1F2" }]}>
               <Ionicons

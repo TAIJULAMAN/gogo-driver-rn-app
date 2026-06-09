@@ -82,8 +82,12 @@ export default function EarningsScreen() {
             <View style={styles.balanceCard}>
                 <View style={styles.balanceHeader}>
                     <View>
-                        <Text style={styles.balanceLabel}>Available Balance</Text>
-                        <Text style={styles.balanceAmount}>{formatCurrency(earnings.total)}</Text>
+                        <Text style={styles.balanceLabel}>
+                            {selectedPeriod === 'week' ? 'Weekly Earnings' : 'Monthly Earnings'}
+                        </Text>
+                        <Text style={styles.balanceAmount}>
+                            {formatCurrency(selectedPeriod === 'week' ? earnings.week : earnings.month)}
+                        </Text>
                     </View>
                 </View>
                 {earnings.pending > 0 && (
