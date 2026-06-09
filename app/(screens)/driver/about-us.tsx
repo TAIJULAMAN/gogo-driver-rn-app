@@ -1,15 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React from 'react';
-import { Image, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { Colors } from '../../../constants/Colors';
+import { WebView } from 'react-native-webview';
 import { useGetCommonContentQuery } from '../../../Redux/api/commonApi';
+import { Colors } from '../../../constants/Colors';
 
 export default function AboutUsScreen() {
     const router = useRouter();
     const { data: contentData, isLoading } = useGetCommonContentQuery({});
-    const about = contentData?.data?.about || contentData?.data?.aboutUs;
+    const about = (contentData?.data?.about || contentData?.data?.aboutUs || '')?.trim();
 
     return (
         <View style={styles.container}>
@@ -24,47 +25,56 @@ export default function AboutUsScreen() {
                 <View style={{ width: 24 }} />
             </Animated.View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                <View style={styles.logoContainer}>
-                    <Text style={styles.logoText}>GOGO</Text>
-                    <Text style={styles.versionText}>Driver App v1.0.0</Text>
+            {isLoading ? (
+                <View style={styles.centered}>
+                    <ActivityIndicator size="large" color={Colors.primary} />
+                    <Text style={styles.loadingText}>Loading About Us...</Text>
                 </View>
-
-                {isLoading ? (
-                    <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: 20 }} />
-                ) : (
-                    <Text style={styles.paragraph}>
-                        {about || 'GOGO is a leading ride-hailing platform committed to providing safe, reliable, and convenient transportation solutions.'}
-                    </Text>
-                )}
-
-                <Text style={styles.heading}>Our Values</Text>
-                <View style={styles.valueItem}>
-                    <Ionicons name="shield-checkmark-outline" size={24} color={Colors.primary} />
-                    <View style={styles.valueTextContainer}>
-                        <Text style={styles.valueTitle}>Safety First</Text>
-                        <Text style={styles.valueDescription}>We prioritize the safety of our drivers and passengers above all else.</Text>
-                    </View>
+            ) : about ? (
+                <WebView
+                    originWhitelist={['*']}
+                    source={{
+                        html: `
+                            <html>
+                            <head>
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+                                <style>
+                                    body {
+                                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                                        color: #4a5568;
+                                        line-height: 1.6;
+                                        font-size: 15px;
+                                        padding: 24px;
+                                        margin: 0;
+                                        background-color: #fff;
+                                    }
+                                    h1, h2, h3, h4, h5, h6 {
+                                        color: #1a202c;
+                                        margin-top: 24px;
+                                        margin-bottom: 12px;
+                                        font-weight: 700;
+                                    }
+                                    h1 { font-size: 22px; }
+                                    h2 { font-size: 18px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; }
+                                    p { margin-bottom: 16px; }
+                                    ul, ol { padding-left: 20px; margin-bottom: 16px; }
+                                    li { margin-bottom: 8px; }
+                                </style>
+                            </head>
+                            <body>
+                                ${about}
+                            </body>
+                            </html>
+                        `
+                    }}
+                    style={styles.webview}
+                    showsVerticalScrollIndicator={false}
+                />
+            ) : (
+                <View style={styles.centered}>
+                    <Text style={styles.errorText}>About Us is not available right now.</Text>
                 </View>
-
-                <View style={styles.valueItem}>
-                    <Ionicons name="people-outline" size={24} color={Colors.primary} />
-                    <View style={styles.valueTextContainer}>
-                        <Text style={styles.valueTitle}>Community Focused</Text>
-                        <Text style={styles.valueDescription}>We build strong communities through mutual respect and support.</Text>
-                    </View>
-                </View>
-
-                <View style={styles.valueItem}>
-                    <Ionicons name="rocket-outline" size={24} color={Colors.primary} />
-                    <View style={styles.valueTextContainer}>
-                        <Text style={styles.valueTitle}>Innovation</Text>
-                        <Text style={styles.valueDescription}>We continuously improve our technology to deliver the best experience.</Text>
-                    </View>
-                </View>
-
-                <View style={{ height: 40 }} />
-            </ScrollView>
+            )}
         </View>
     );
 }
@@ -93,61 +103,23 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: Colors.text,
     },
-    content: {
+    centered: {
         flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
         padding: 20,
     },
-    logoContainer: {
-        alignItems: 'center',
-        marginBottom: 32,
-        marginTop: 16,
-    },
-    logoText: {
-        fontSize: 40,
-        fontWeight: '900',
-        color: Colors.primary,
-        letterSpacing: 2,
-    },
-    versionText: {
-        marginTop: 8,
-        color: Colors.textLight,
-        fontSize: 14,
-    },
-    paragraph: {
-        fontSize: 16,
-        color: '#444',
-        lineHeight: 24,
-        marginBottom: 16,
-        textAlign: 'center',
-    },
-    heading: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: Colors.text,
-        marginTop: 24,
-        marginBottom: 16,
-    },
-    valueItem: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginBottom: 20,
-        backgroundColor: '#F9F9F9',
-        padding: 16,
-        borderRadius: 12,
-    },
-    valueTextContainer: {
-        flex: 1,
-        marginLeft: 16,
-    },
-    valueTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: Colors.text,
-        marginBottom: 4,
-    },
-    valueDescription: {
+    loadingText: {
+        marginTop: 12,
         fontSize: 14,
         color: '#666',
-        lineHeight: 20,
+    },
+    errorText: {
+        fontSize: 15,
+        color: '#666',
+        textAlign: 'center',
+    },
+    webview: {
+        flex: 1,
     },
 });
