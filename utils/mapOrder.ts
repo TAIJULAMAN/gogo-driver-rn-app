@@ -19,7 +19,7 @@ export const getUserName = (user: any) => {
 };
 
 export const getAddress = (point: any) => {
-  return point?.label || point?.addressLine || "Unknown location";
+  return point?.addressLine || point?.label || "Unknown location";
 };
 
 export const mapOrderToRide = (order: any): BackendRide => {

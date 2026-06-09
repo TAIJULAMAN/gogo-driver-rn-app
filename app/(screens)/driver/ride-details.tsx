@@ -21,7 +21,7 @@ import { useGetOrderByIdQuery, useSubmitCompletionProofMutation, useCompleteRide
 import { formatCurrency } from "../../../utils/mockData";
 
 const getLabel = (point: any) =>
-  point?.label || point?.addressLine || "Unknown location";
+  point?.addressLine || point?.label || "Unknown location";
 
 const getUserName = (user: any) => {
   const full = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
