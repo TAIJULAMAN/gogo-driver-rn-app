@@ -1,4 +1,4 @@
-import { Ride } from '../types';
+import { Ride } from "../types";
 
 export type BackendRide = Ride & {
   backendStatus?:
