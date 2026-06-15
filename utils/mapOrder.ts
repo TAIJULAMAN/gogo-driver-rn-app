@@ -8,6 +8,8 @@ export type BackendRide = Ride & {
     | "InProgress"
     | "Completed"
     | "Cancelled";
+  distanceFromDriverKm?: number | null;
+  vehicleType?: "Bike" | "Car" | "Truck";
 };
 
 export const getUserName = (user: any) => {
@@ -49,13 +51,15 @@ export const mapOrderToRide = (order: any): BackendRide => {
       longitude: order.dropoff?.longitude || 0,
     },
     status,
-    fare: Number(order.price || 0),
-    distance: Number(order.distanceKm || 0),
+    fare: Number(order.driverEarningsAmount ?? order.price ?? 0),
+    distance: Number(order.distanceFromDriverKm ?? order.distanceKm ?? 0),
     duration: 0,
     requestedAt: order.createdAt ? new Date(order.createdAt) : new Date(),
     startedAt: order.tripStartedAt ? new Date(order.tripStartedAt) : undefined,
     completedAt: order.completedAt ? new Date(order.completedAt) : undefined,
     rating: order.review?.rating,
     backendStatus: order.status,
+    distanceFromDriverKm: order.distanceFromDriverKm ?? null,
+    vehicleType: order.vehicleType,
   };
 };

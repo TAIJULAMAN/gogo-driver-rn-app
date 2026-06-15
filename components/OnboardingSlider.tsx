@@ -20,8 +20,8 @@ const SLIDES = [
     {
         id: "2",
         emoji: "💰",
-        title: "Get Paid Instantly",
-        description: "Cash out your earnings anytime. No waiting for weekly payouts.",
+        title: "Track Every Earning",
+        description: "Track cash received and pending earnings while weekly settlements are marked by admin.",
     },
     {
         id: "3",

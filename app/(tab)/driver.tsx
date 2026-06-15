@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
@@ -38,6 +38,7 @@ export default function DriverHomeScreen() {
   const { data: notificationsData, refetch: refetchNotifications } = useGetNotificationsQuery({});
   const [updateStatus] = useUpdateDriverProfileMutation();
   const [updateLocation] = useUpdateLocationMutation();
+  const mapRef = useRef<MapView | null>(null);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -48,6 +49,24 @@ export default function DriverHomeScreen() {
   }, [refetchProfile, refetchStats, refetchNotifications]);
 
   const user = profileData?.data;
+  const onboarding = user?.onboarding;
+  const canGoOnline = onboarding?.canGoOnline ?? user?.status === "Approved";
+  const checklistItems = [
+    {
+      key: "vehicleInfoSubmitted",
+      label: "Vehicle information submitted",
+      route: "/driver/vehicle-info",
+    },
+    {
+      key: "documentsUploaded",
+      label: "Required documents uploaded",
+      route: "/driver/documents",
+    },
+    {
+      key: "adminApproved",
+      label: "Admin approval completed",
+    },
+  ];
   const statsRaw = statsData?.data || {};
   const stats = {
     todayRides: statsRaw.todayRides || 0,
@@ -60,11 +79,44 @@ export default function DriverHomeScreen() {
 
   const notifications = notificationsData?.data?.result || (Array.isArray(notificationsData?.data) ? notificationsData?.data : []);
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+  const activeRide = statsRaw.activeRide;
 
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [isOnline, setIsOnline] = useState(
     user?.status === "Approved" || user?.isOnline,
   );
+
+  const activeRouteCoordinates = useMemo(() => {
+    const points = [
+      activeRide?.pickup,
+      ...(Array.isArray(activeRide?.stoppages) ? activeRide.stoppages : []),
+      activeRide?.dropoff,
+    ];
+
+    return points
+      .filter(
+        (point: any) =>
+          typeof point?.latitude === "number" &&
+          typeof point?.longitude === "number",
+      )
+      .map((point: any) => ({
+        latitude: point.latitude,
+        longitude: point.longitude,
+      }));
+  }, [activeRide]);
+
+  const mapFitCoordinates = useMemo(() => {
+    const driverCoordinate = currentLocation
+      ? {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        }
+      : null;
+    return [
+      ...(driverCoordinate ? [driverCoordinate] : []),
+      ...activeRouteCoordinates,
+    ];
+  }, [activeRouteCoordinates, currentLocation]);
 
 
   // Sync local online state with profile data
@@ -73,6 +125,19 @@ export default function DriverHomeScreen() {
       setIsOnline(user.isOnline);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (mapFitCoordinates.length < 2) return;
+
+    const timer = setTimeout(() => {
+      mapRef.current?.fitToCoordinates(mapFitCoordinates, {
+        edgePadding: { top: 60, right: 40, bottom: 60, left: 40 },
+        animated: true,
+      });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [mapFitCoordinates]);
 
   // Handle Location Updates
   useEffect(() => {
@@ -136,6 +201,18 @@ export default function DriverHomeScreen() {
 
   const handleToggleOnline = async () => {
     const newStatus = !isOnline;
+
+    if (newStatus && !canGoOnline) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      const missing = onboarding?.missingRequirements?.length
+        ? `\n\nMissing: ${onboarding.missingRequirements.join(", ")}`
+        : "";
+      Alert.alert(
+        "Complete onboarding",
+        `Please complete all required onboarding steps and wait for admin approval before going online.${missing}`,
+      );
+      return;
+    }
     
     // 1. Optimistic Update: Change UI immediately
     setIsOnline(newStatus);
@@ -149,7 +226,8 @@ export default function DriverHomeScreen() {
       setIsOnline(!newStatus);
       Alert.alert(
         "Error",
-        "Failed to update your status. Please check your connection."
+        (error as any)?.data?.message ||
+          "Failed to update your status. Please check your connection."
       );
       console.error("Status update failed:", error);
     }
@@ -239,6 +317,7 @@ export default function DriverHomeScreen() {
       >
         {currentLocation ? (
           <MapView
+            ref={mapRef}
             provider={PROVIDER_GOOGLE}
             style={StyleSheet.absoluteFill}
             customMapStyle={lightMapStyle}
@@ -248,12 +327,16 @@ export default function DriverHomeScreen() {
               latitudeDelta: 0.01,
               longitudeDelta: 0.01,
             }}
-            region={{
-              latitude: currentLocation.coords.latitude,
-              longitude: currentLocation.coords.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
+            region={
+              activeRouteCoordinates.length >= 2
+                ? undefined
+                : {
+                    latitude: currentLocation.coords.latitude,
+                    longitude: currentLocation.coords.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }
+            }
           >
             <Marker
               coordinate={{
@@ -264,6 +347,33 @@ export default function DriverHomeScreen() {
             >
                <Ionicons name="car" size={32} color={Colors.primary} />
             </Marker>
+            {activeRouteCoordinates.length >= 2 && (
+              <>
+                <Polyline
+                  coordinates={activeRouteCoordinates}
+                  strokeColor={Colors.primaryDark}
+                  strokeWidth={5}
+                />
+                <Marker coordinate={activeRouteCoordinates[0]} title="Pickup">
+                  <Ionicons name="location" size={30} color={Colors.success} />
+                </Marker>
+                {activeRouteCoordinates.slice(1, -1).map((coordinate, index) => (
+                  <Marker
+                    key={`${coordinate.latitude}-${coordinate.longitude}-${index}`}
+                    coordinate={coordinate}
+                    title={`Stop ${index + 1}`}
+                  >
+                    <Ionicons name="ellipse" size={18} color={Colors.warning} />
+                  </Marker>
+                ))}
+                <Marker
+                  coordinate={activeRouteCoordinates[activeRouteCoordinates.length - 1]}
+                  title="Dropoff"
+                >
+                  <Ionicons name="flag" size={28} color={Colors.error} />
+                </Marker>
+              </>
+            )}
           </MapView>
         ) : (
           <View style={styles.mapPlaceholder}>
@@ -272,6 +382,55 @@ export default function DriverHomeScreen() {
           </View>
         )}
       </Animated.View>
+
+      {!canGoOnline && (
+        <Animated.View
+          entering={FadeInDown.delay(400).duration(600)}
+          style={styles.onboardingCard}
+        >
+          <View style={styles.onboardingHeader}>
+            <Ionicons name="shield-checkmark-outline" size={22} color={Colors.primaryDark} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.onboardingTitle}>Complete driver activation</Text>
+              <Text style={styles.onboardingText}>
+                Please complete all required onboarding steps and wait for admin approval before going online.
+              </Text>
+            </View>
+          </View>
+          <View style={styles.checklist}>
+            {checklistItems.map((item) => {
+              const done = Boolean(onboarding?.checks?.[item.key]);
+              return (
+                <TouchableOpacity
+                  key={item.key}
+                  style={styles.checklistItem}
+                  activeOpacity={item.route && !done ? 0.7 : 1}
+                  onPress={() => {
+                    if (item.route && !done) router.push(item.route as any);
+                  }}
+                >
+                  <Ionicons
+                    name={done ? "checkmark-circle" : "ellipse-outline"}
+                    size={20}
+                    color={done ? Colors.success : Colors.textLight}
+                  />
+                  <Text
+                    style={[
+                      styles.checklistText,
+                      done && styles.checklistTextDone,
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                  {item.route && !done && (
+                    <Ionicons name="chevron-forward" size={18} color={Colors.textLight} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Animated.View>
+      )}
 
 
 
@@ -358,7 +517,7 @@ export default function DriverHomeScreen() {
             style={styles.quickAction}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              Alert.alert("Help", "Contact support at support@gogo.com");
+              router.push("/driver/help-center");
             }}
           >
             <View
@@ -551,6 +710,52 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.textLight,
     marginTop: 12,
+  },
+  onboardingCard: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  onboardingHeader: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 14,
+  },
+  onboardingTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  onboardingText: {
+    fontSize: 13,
+    color: Colors.textLight,
+    lineHeight: 19,
+  },
+  checklist: {
+    gap: 8,
+  },
+  checklistItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Colors.gray[50],
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  checklistText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.text,
+  },
+  checklistTextDone: {
+    color: Colors.textLight,
   },
   section: {
     padding: 20,

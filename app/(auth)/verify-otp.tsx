@@ -96,15 +96,6 @@ export default function VerifyOTPScreen() {
           return;
         }
 
-        // Check if the Driver is approved
-        if (user.status !== "Approved") {
-          Alert.alert(
-            "Account Pending",
-            "Your driver account is currently pending admin approval. You will be notified once you are approved.",
-          );
-          return;
-        }
-
         dispatch(
           setUser({
             user,
@@ -113,7 +104,14 @@ export default function VerifyOTPScreen() {
           }),
         );
 
-        Alert.alert("Success", "Verification successful!");
+        if (user.status !== "Approved") {
+          Alert.alert(
+            "Complete onboarding",
+            "Please complete all required onboarding steps and wait for admin approval before going online.",
+          );
+        } else {
+          Alert.alert("Success", "Verification successful!");
+        }
         router.replace("/(tab)/driver");
       }
     } catch (error: any) {

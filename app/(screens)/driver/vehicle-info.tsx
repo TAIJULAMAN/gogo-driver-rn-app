@@ -6,6 +6,12 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Colors } from '../../../constants/Colors';
 import { useGetDriverProfileQuery, useUpdateDriverProfileMutation } from '../../../Redux/api/driverApi';
 
+const VEHICLE_TYPES = [
+    { label: 'Bike', icon: 'bicycle-outline' },
+    { label: 'Car', icon: 'car-outline' },
+    { label: 'Truck', icon: 'bus-outline' },
+] as const;
+
 export default function VehicleInfoScreen() {
     const router = useRouter();
     const { data: profileData } = useGetDriverProfileQuery({});
@@ -31,6 +37,16 @@ export default function VehicleInfoScreen() {
     }, [user]);
 
     const handleSave = async () => {
+        if (!VEHICLE_TYPES.some((vehicle) => vehicle.label === vehicleType)) {
+            Alert.alert('Invalid vehicle', 'Please select Bike, Car, or Truck.');
+            return;
+        }
+
+        if (!plateNumber.trim()) {
+            Alert.alert('Missing plate number', 'Please enter your vehicle plate number.');
+            return;
+        }
+
         try {
             await updateProfile({
                 vehicle: {
@@ -72,14 +88,34 @@ export default function VehicleInfoScreen() {
 
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Vehicle Type</Text>
-                        <View style={styles.inputContainer}>
-                            <Ionicons name="car-sport-outline" size={20} color={Colors.textLight} />
-                            <TextInput
-                                style={styles.input}
-                                value={vehicleType}
-                                onChangeText={setVehicleType}
-                                placeholder="e.g. Car, Bike"
-                            />
+                        <View style={styles.vehicleTypeRow}>
+                            {VEHICLE_TYPES.map((vehicle) => {
+                                const selected = vehicleType === vehicle.label;
+                                return (
+                                    <TouchableOpacity
+                                        key={vehicle.label}
+                                        style={[
+                                            styles.vehicleTypeButton,
+                                            selected && styles.vehicleTypeButtonSelected,
+                                        ]}
+                                        onPress={() => setVehicleType(vehicle.label)}
+                                    >
+                                        <Ionicons
+                                            name={vehicle.icon as any}
+                                            size={20}
+                                            color={selected ? Colors.secondary : Colors.textLight}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.vehicleTypeText,
+                                                selected && styles.vehicleTypeTextSelected,
+                                            ]}
+                                        >
+                                            {vehicle.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
                     </View>
 
@@ -222,6 +258,34 @@ const styles = StyleSheet.create({
     },
     row: {
         flexDirection: 'row',
+    },
+    vehicleTypeRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    vehicleTypeButton: {
+        flex: 1,
+        height: 52,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#EEE',
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 6,
+    },
+    vehicleTypeButtonSelected: {
+        backgroundColor: Colors.primary,
+        borderColor: Colors.primary,
+    },
+    vehicleTypeText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: Colors.textLight,
+    },
+    vehicleTypeTextSelected: {
+        color: Colors.secondary,
     },
     footer: {
         padding: 20,

@@ -53,6 +53,7 @@ export default function RidesScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("pending");
   const [rejectedRideIds, setRejectedRideIds] = useState<string[]>([]);
   const [acceptingRideId, setAcceptingRideId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const pendingQuery = useGetRiderRidesQuery({ scope: "available" });
   const acceptedQuery = useGetRiderRidesQuery({ status: "Accepted" });
@@ -62,13 +63,6 @@ export default function RidesScreen() {
   const [acceptRide] = useAcceptRideMutation();
   const [completeRide, { isLoading: isCompleting }] = useCompleteRideMutation();
 
-  const pendingRides = useMemo(
-    () =>
-      getOrders(pendingQuery.data)
-        .map(mapOrderToRide)
-        .filter((ride: BackendRide) => !rejectedRideIds.includes(ride.id)),
-    [pendingQuery.data, rejectedRideIds],
-  );
   const activeRides = useMemo(
     () =>
       [
@@ -82,6 +76,17 @@ export default function RidesScreen() {
     () => getOrders(completedQuery.data).map(mapOrderToRide),
     [completedQuery.data],
   );
+  const hasActiveRide = activeRides.length > 0;
+  const pendingRides = useMemo(
+    () =>
+      hasActiveRide
+        ? []
+        : getOrders(pendingQuery.data)
+            .map(mapOrderToRide)
+            .filter((ride: BackendRide) => !rejectedRideIds.includes(ride.id))
+            .sort((a: BackendRide, b: BackendRide) => a.distance - b.distance),
+    [hasActiveRide, pendingQuery.data, rejectedRideIds],
+  );
 
   const isLoading =
     pendingQuery.isLoading ||
@@ -89,13 +94,6 @@ export default function RidesScreen() {
     arrivedQuery.isLoading ||
     inProgressQuery.isLoading ||
     completedQuery.isLoading;
-  const isRefreshing =
-    pendingQuery.isFetching ||
-    acceptedQuery.isFetching ||
-    arrivedQuery.isFetching ||
-    inProgressQuery.isFetching ||
-    completedQuery.isFetching;
-
   const handleTabChange = (tab: TabType) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActiveTab(tab);
@@ -106,6 +104,15 @@ export default function RidesScreen() {
     
     const riderId = user?._id ?? user?.id;
     console.log("handleAccept - rideId:", rideId, "riderId:", riderId, "user:", JSON.stringify(user));
+
+    if (hasActiveRide) {
+      Alert.alert(
+        "Active ride in progress",
+        "Complete your current ride before accepting another request.",
+      );
+      setAcceptingRideId(null);
+      return;
+    }
     
     if (!riderId) {
       Alert.alert("Error", "Unable to identify your account. Please log in again.");
@@ -169,13 +176,19 @@ export default function RidesScreen() {
   };
 
   const onRefresh = async () => {
-    await Promise.all([
-      pendingQuery.refetch(),
-      acceptedQuery.refetch(),
-      arrivedQuery.refetch(),
-      inProgressQuery.refetch(),
-      completedQuery.refetch(),
-    ]);
+    setRefreshing(true);
+    setRejectedRideIds([]);
+    try {
+      await Promise.all([
+        pendingQuery.refetch(),
+        acceptedQuery.refetch(),
+        arrivedQuery.refetch(),
+        inProgressQuery.refetch(),
+        completedQuery.refetch(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const getRideCount = (tab: TabType) => {
@@ -251,6 +264,7 @@ export default function RidesScreen() {
           ride={ride}
           onAccept={
             activeTab === "pending" && !acceptingRideId
+            && !hasActiveRide
               ? () => handleAccept(ride.id)
               : undefined
           }
@@ -277,9 +291,6 @@ export default function RidesScreen() {
     <View style={styles.container}>
       <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
         <Text style={styles.title}>My Rides</Text>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{getRideCount(activeTab)}</Text>
-        </View>
       </Animated.View>
 
       <Animated.View
@@ -348,7 +359,7 @@ export default function RidesScreen() {
         style={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={isRefreshing}
+            refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={Colors.primary}
             colors={[Colors.primary]}
@@ -380,17 +391,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: Colors.text,
-  },
-  badge: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.secondary,
   },
   tabs: {
     flexDirection: "row",

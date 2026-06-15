@@ -22,10 +22,17 @@ export default function EarningsScreen() {
         today: earningsRaw.today || 0,
         week: earningsRaw.week || 0,
         month: earningsRaw.month || 0,
+        paid: earningsRaw.paid || 0,
         pending: earningsRaw.pending || 0,
+        adminDue: earningsRaw.adminDue || 0,
+        settlementBalance: earningsRaw.settlementBalance || 0,
+        cashPaid: earningsRaw.cashPaid || 0,
         dailyTrend: earningsRaw.dailyTrend || [],
         transactions: earningsRaw.transactions || []
     };
+    const hasAdminDue = Number(earnings.adminDue) > 0;
+    const settlementLabel = hasAdminDue ? 'You Owe Admin' : 'Admin Owes You';
+    const settlementAmount = hasAdminDue ? earnings.adminDue : earnings.pending;
 
     // Prepare chart data (fill missing days of the week)
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -82,22 +89,28 @@ export default function EarningsScreen() {
             <View style={styles.balanceCard}>
                 <View style={styles.balanceHeader}>
                     <View>
-                        <Text style={styles.balanceLabel}>
-                            {selectedPeriod === 'week' ? 'Weekly Earnings' : 'Monthly Earnings'}
-                        </Text>
+                        <Text style={styles.balanceLabel}>Total Earnings</Text>
                         <Text style={styles.balanceAmount}>
-                            {formatCurrency(selectedPeriod === 'week' ? earnings.week : earnings.month)}
+                            {formatCurrency(earnings.total)}
                         </Text>
                     </View>
                 </View>
-                {earnings.pending > 0 && (
-                    <View style={styles.pendingContainer}>
-                        <Ionicons name="time" size={16} color={Colors.warning} />
-                        <Text style={styles.pendingText}>
-                            {formatCurrency(earnings.pending)} pending
-                        </Text>
-                    </View>
-                )}
+                <View style={styles.pendingContainer}>
+                    <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+                    <Text style={styles.pendingText}>
+                        {formatCurrency(earnings.paid)} received
+                    </Text>
+                </View>
+                <View style={styles.pendingContainer}>
+                    <Ionicons
+                        name={hasAdminDue ? "alert-circle" : "time"}
+                        size={16}
+                        color={Colors.warning}
+                    />
+                    <Text style={styles.pendingText}>
+                        {formatCurrency(settlementAmount)} {hasAdminDue ? 'you owe admin' : 'admin owes you'}
+                    </Text>
+                </View>
             </View>
 
             {/* Period Selector */}
@@ -155,23 +168,32 @@ export default function EarningsScreen() {
                 <Text style={styles.sectionTitle}>Breakdown</Text>
                 <View style={styles.statsGrid}>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>Today</Text>
-                        <Text style={styles.statValue}>{formatCurrency(earnings.today)}</Text>
+                        <Text style={styles.statLabel}>Received</Text>
+                        <Text style={styles.statValue}>{formatCurrency(earnings.paid)}</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>This Week</Text>
-                        <Text style={styles.statValue}>{formatCurrency(earnings.week)}</Text>
+                        <Text style={styles.statLabel}>{settlementLabel}</Text>
+                        <Text
+                            style={[
+                                styles.statValue,
+                                hasAdminDue && styles.adminDueValue,
+                            ]}
+                        >
+                            {formatCurrency(settlementAmount)}
+                        </Text>
                     </View>
                 </View>
                 <View style={styles.statsGrid}>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>This Month</Text>
-                        <Text style={styles.statValue}>{formatCurrency(earnings.month)}</Text>
+                        <Text style={styles.statLabel}>Cash Received</Text>
+                        <Text style={styles.statValue}>{formatCurrency(earnings.cashPaid)}</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>Avg/Day</Text>
+                        <Text style={styles.statLabel}>
+                            {selectedPeriod === 'week' ? 'This Week' : 'This Month'}
+                        </Text>
                         <Text style={styles.statValue}>
-                            {formatCurrency(earnings.month / 30)}
+                            {formatCurrency(selectedPeriod === 'week' ? earnings.week : earnings.month)}
                         </Text>
                     </View>
                 </View>
@@ -364,6 +386,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: Colors.text,
         marginBottom: 4,
+    },
+    adminDueValue: {
+        color: Colors.warning,
     },
     statSubtext: {
         fontSize: 10,

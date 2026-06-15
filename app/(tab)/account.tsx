@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
 import {
+  useDeleteMyAccountMutation,
   useGetDriverProfileQuery,
   useUpdateDriverProfileMutation,
 } from "../../Redux/api/driverApi";
@@ -32,6 +33,8 @@ export default function AccountScreen() {
   const { data: profileData, isLoading } = useGetDriverProfileQuery({});
   const [updateDriverProfile, { isLoading: isUpdatingProfile }] =
     useUpdateDriverProfileMutation();
+  const [deleteMyAccount, { isLoading: isDeletingAccount }] =
+    useDeleteMyAccountMutation();
 
   const user = profileData?.data || authUser;
   const [isTaxModalVisible, setIsTaxModalVisible] = useState(false);
@@ -141,6 +144,32 @@ export default function AccountScreen() {
         },
       },
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "This will permanently delete your driver account. This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteMyAccount({}).unwrap();
+              dispatch(logout());
+              router.replace("/(auth)/sign-in");
+            } catch (error: any) {
+              Alert.alert(
+                "Error",
+                error?.data?.message || "Could not delete your account."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleVerify = () => {
@@ -385,6 +414,22 @@ export default function AccountScreen() {
               />
             </View>
             <Text style={styles.menuItemText}>About Us</Text>
+            <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleDeleteAccount}
+            disabled={isDeletingAccount}
+          >
+            <View style={[styles.menuIconCircle, { backgroundColor: "#FFF1F2" }]}>
+              <Ionicons name="trash-outline" size={20} color="#E11D48" />
+            </View>
+            <Text style={[styles.menuItemText, { color: "#E11D48" }]}>
+              {isDeletingAccount ? "Deleting..." : "Delete Account"}
+            </Text>
             <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
           </TouchableOpacity>
 

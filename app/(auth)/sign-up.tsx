@@ -19,6 +19,12 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
 import { useSignUpMutation } from "../../Redux/api/authApi";
 
+const VEHICLE_TYPES = [
+    { label: "Bike", icon: "bicycle-outline" },
+    { label: "Car", icon: "car-outline" },
+    { label: "Truck", icon: "bus-outline" },
+] as const;
+
 export default function SignUpScreen() {
     const router = useRouter();
     const { phone } = useLocalSearchParams();
@@ -31,6 +37,7 @@ export default function SignUpScreen() {
     const [trnVatNo, setTrnVatNo] = useState("");
     const [emiratesId, setEmiratesId] = useState("");
     const [drivingLicense, setDrivingLicense] = useState("");
+    const [vehicleType, setVehicleType] = useState<(typeof VEHICLE_TYPES)[number]["label"]>("Bike");
     const [referralCode, setReferralCode] = useState("");
     const [phoneNumber, setPhoneNumber] = useState((phone as string) || "");
     const [newPhoneNumber, setNewPhoneNumber] = useState("");
@@ -65,13 +72,16 @@ export default function SignUpScreen() {
             role: "Rider",
             emaratesId: emiratesId.trim(),
             drivingLicense: drivingLicense.trim(),
+            vehicle: {
+                type: vehicleType,
+            },
         };
 
         try {
             await signUp(payload).unwrap();
             Alert.alert(
                 "Success",
-                "Driver account created successfully. Please sign in after approval.",
+                "Driver account created successfully. Please sign in to complete onboarding.",
             );
             router.replace("/(auth)/sign-in");
         } catch (error: any) {
@@ -197,6 +207,38 @@ export default function SignUpScreen() {
                         />
                     </View>
 
+                    <View style={styles.vehicleWrapper}>
+                        <Text style={styles.smallLabel}>Vehicle Type</Text>
+                        <View style={styles.vehicleRow}>
+                            {VEHICLE_TYPES.map((vehicle) => {
+                                const selected = vehicleType === vehicle.label;
+                                return (
+                                    <TouchableOpacity
+                                        key={vehicle.label}
+                                        style={[
+                                            styles.vehicleOption,
+                                            selected && styles.vehicleOptionSelected,
+                                        ]}
+                                        onPress={() => setVehicleType(vehicle.label)}
+                                    >
+                                        <Ionicons
+                                            name={vehicle.icon as any}
+                                            size={18}
+                                            color={selected ? "#000" : "#777"}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.vehicleOptionText,
+                                                selected && styles.vehicleOptionTextSelected,
+                                            ]}
+                                        >
+                                            {vehicle.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
 
                     <TouchableOpacity
                         style={styles.referralContainer}
@@ -383,6 +425,37 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: "#000",
         fontWeight: "600",
+    },
+    vehicleWrapper: {
+        marginBottom: 25,
+    },
+    vehicleRow: {
+        flexDirection: "row",
+        gap: 10,
+    },
+    vehicleOption: {
+        flex: 1,
+        height: 48,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: "#E0E0E0",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "row",
+        gap: 6,
+        backgroundColor: "#fff",
+    },
+    vehicleOptionSelected: {
+        backgroundColor: "#abffaf",
+        borderColor: "#abffaf",
+    },
+    vehicleOptionText: {
+        color: "#777",
+        fontSize: 13,
+        fontWeight: "700",
+    },
+    vehicleOptionTextSelected: {
+        color: "#000",
     },
     referralContainer: {
         marginTop: 5,

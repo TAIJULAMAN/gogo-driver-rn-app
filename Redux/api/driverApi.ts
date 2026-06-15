@@ -14,6 +14,13 @@ export const driverApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: ["user"],
         }),
+        deleteMyAccount: builder.mutation({
+            query: () => ({
+                url: "users/me",
+                method: "DELETE",
+            }),
+            invalidatesTags: ["user", "orders", "earnings"],
+        }),
         updateDriverDocuments: builder.mutation({
             query: (data) => ({
                 url: "users/me/documents",
@@ -105,6 +112,7 @@ export const driverApi = baseApi.injectEndpoints({
 export const {
     useGetDriverProfileQuery,
     useUpdateDriverProfileMutation,
+    useDeleteMyAccountMutation,
     useUpdateDriverDocumentsMutation,
     useUpdateLocationMutation,
     useGetActiveRidesQuery,
