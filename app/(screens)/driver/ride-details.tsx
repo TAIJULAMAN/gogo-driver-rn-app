@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
   retakeBtnText: { fontSize: 14, fontWeight: "600", color: Colors.text },
   deliverBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
-    backgroundColor: Colors.success, paddingVertical: 16, borderRadius: 14,
+    backgroundColor: Colors.success, paddingVertical: 16, paddingHorizontal: 16, borderRadius: 14,
     gap: 8, shadowColor: Colors.success,
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   deliverBtnText: { fontSize: 16, fontWeight: "700", color: Colors.white },
   actionBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
-    paddingVertical: 14, borderRadius: 12, gap: 8,
+    paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, gap: 8,
     shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3,
   },
   actionBtnText: { fontSize: 15, fontWeight: "700", color: Colors.white, flexShrink: 1 },
